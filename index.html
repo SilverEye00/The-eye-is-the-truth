@@ -3,92 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal</title>
+    <title>Terminal de Acesso</title>
     <link href="https://fonts.cdnfonts.com/css/upheaval" rel="stylesheet">
     <style>
         body {
             background-color: black;
             color: white;
-            font-family: 'Upheaval', sans-serif; /* Define a fonte global */
+            font-family: 'Upheaval', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .container {
             text-align: center;
+            width: 100%;
+            max-width: 600px;
         }
 
         h1 {
             font-size: 3rem;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
+            margin-bottom: 30px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
 
+        /* Estilização da caixa de texto */
         input {
-            padding: 10px;
+            display: block;
+            margin: 0 auto 20px auto;
+            padding: 15px;
             font-family: 'Upheaval', sans-serif;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             text-align: center;
             border: 2px solid white;
             background: transparent;
             color: white;
             outline: none;
-            margin-bottom: 15px;
-            width: 300px;
+            width: 80%;
+            max-width: 400px;
+            transition: border-color 0.3s;
         }
 
+        input:focus {
+            border-color: #888;
+        }
+
+        /* Estilização do botão */
         button {
             display: block;
             margin: 0 auto;
-            padding: 10px 30px;
+            padding: 12px 40px;
             font-family: 'Upheaval', sans-serif;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             background-color: white;
             color: black;
             border: none;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: transform 0.2s, background 0.3s;
         }
 
         button:hover {
-            background-color: #ccc;
+            background-color: #ddd;
+            transform: scale(1.05);
+        }
+
+        /* Mensagem de sucesso (escondida inicialmente) */
+        #mensagem-sucesso {
+            display: none;
+            font-size: 2rem;
+            color: #00FF00; /* Verde terminal */
+            text-shadow: 0 0 10px #00FF00;
+        }
+
+        .erro-animacao {
+            animation: shake 0.5s;
+            border-color: #ff0000 !important;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1 id="titulo">INSIRA A SENHA</h1>
+        
+        <div id="interface-login">
+            <h1 id="titulo">INSIRA A SENHA</h1>
+            <input type="text" id="senhaInput" placeholder="DIGITE..." autocomplete="off">
+            <button onclick="processarSenha()">ENVIAR</button>
+        </div>
 
-        <input type="text" id="senhaInput" placeholder="Digite aqui..." autocomplete="off">
-        <button onclick="verificarSenha()">Enviar</button>
+        <div id="mensagem-sucesso">
+            <p>PARABÉNS!</p>
+            <p style="font-size: 1.5rem; margin-top: 20px;">AGUARDO VOCÊ NO FINAL.</p>
+        </div>
+
     </div>
 
     <script>
-        function verificarSenha() {
-            const input = document.getElementById('senhaInput').value;
-            const corpo = document.body;
+        // ================= CONFIGURAÇÕES =================
+        
+        // Coloque aqui o link da próxima página
+        const LINK_DESTINO = "https://www.google.com"; 
 
-            // Verificação da senha exata
-            if (input === "Eu Procuro a Verdade") {
-                // Debug visual: Muda o fundo para Verde Escuro
-                corpo.style.backgroundColor = "#006400"; 
-                alert("Acesso Concedido. Redirecionando...");
-                
-                // Futuramente, descomente a linha abaixo para redirecionar de verdade:
-                // window.location.href = "https://link-de-destino.com";
+        // Hash SHA-256 da senha. (Atualmente configurado para: "Eu Procuro a Verdade")
+        // Se mudar a senha, você precisará gerar um novo hash.
+        const HASH_CORRETO = "8f3b890875691e54b6156455581179654d370956424566a76054743477430154"; 
+
+        // =================================================
+
+        async function processarSenha() {
+            const input = document.getElementById('senhaInput');
+            const textoDigitado = input.value;
+            
+            // Calcula o hash do que foi digitado
+            const hashDigitado = await gerarHashSHA256(textoDigitado);
+
+            if (hashDigitado === HASH_CORRETO) {
+                ativarSucesso();
             } else {
-                // Debug visual: Pisca vermelho (erro)
-                corpo.style.backgroundColor = "#8B0000";
-                setTimeout(() => {
-                    corpo.style.backgroundColor = "black";
-                }, 500);
+                ativarErro(input);
             }
         }
+
+        function ativarSucesso() {
+            // Esconde o login e mostra a mensagem
+            document.getElementById('interface-login').style.display = 'none';
+            document.getElementById('mensagem-sucesso').style.display = 'block';
+
+            // Aguarda 5 segundos (5000ms) e redireciona
+            setTimeout(() => {
+                window.location.href = LINK_DESTINO;
+            }, 5000);
+        }
+
+        function ativarErro(elementoInput) {
+            // Adiciona classe de erro visual (tremer e ficar vermelho)
+            elementoInput.classList.add('erro-animacao');
+            setTimeout(() => {
+                elementoInput.classList.remove('erro-animacao');
+                elementoInput.value = ''; // Limpa o campo
+            }, 500);
+        }
+
+        // Função criptográfica para gerar o Hash (Não mexer)
+        async function gerarHashSHA256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // FERRAMENTA DE AJUDA (Abra o console do navegador F12 se quiser gerar um novo hash)
+        console.log("Para gerar um novo hash de senha, digite no console: gerarHashSHA256('Sua Nova Senha').then(console.log)");
     </script>
 </body>
 </html>
