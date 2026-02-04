@@ -32,7 +32,6 @@
             text-transform: uppercase;
         }
 
-        /* Estilização da caixa de texto */
         input {
             display: block;
             margin: 0 auto 20px auto;
@@ -53,7 +52,6 @@
             border-color: #888;
         }
 
-        /* Estilização do botão */
         button {
             display: block;
             margin: 0 auto;
@@ -72,11 +70,10 @@
             transform: scale(1.05);
         }
 
-        /* Mensagem de sucesso (escondida inicialmente) */
         #mensagem-sucesso {
             display: none;
             font-size: 2rem;
-            color: #00FF00; /* Verde terminal */
+            color: #00FF00;
             text-shadow: 0 0 10px #00FF00;
         }
 
@@ -103,7 +100,6 @@
 <body>
 
     <div class="container">
-        
         <div id="interface-login">
             <h1 id="titulo">INSIRA A SENHA</h1>
             <input type="text" id="senhaInput" placeholder="DIGITE..." autocomplete="off">
@@ -114,27 +110,26 @@
             <p>PARABÉNS!</p>
             <p style="font-size: 1.5rem; margin-top: 20px;">AGUARDO VOCÊ NO FINAL.</p>
         </div>
-
     </div>
 
     <script>
         // ================= CONFIGURAÇÕES =================
-        
-        // Coloque aqui o link da próxima página
-        const LINK_DESTINO = "https://www.google.com"; 
-
-        // Hash SHA-256 da senha. (Atualmente configurado para: "Eu Procuro a Verdade")
-        // Se mudar a senha, você precisará gerar um novo hash.
+        const LINK_DESTINO = "https://www.google.com"; // Mude para seu link
         const HASH_CORRETO = "8f3b890875691e54b6156455581179654d370956424566a76054743477430154"; 
-
         // =================================================
 
         async function processarSenha() {
             const input = document.getElementById('senhaInput');
-            const textoDigitado = input.value;
             
-            // Calcula o hash do que foi digitado
+            // .trim() remove espaços antes e depois do texto automaticamente
+            const textoDigitado = input.value.trim(); 
+            
             const hashDigitado = await gerarHashSHA256(textoDigitado);
+
+            // Debug para você ver no console (F12) o que está acontecendo
+            console.log("Senha digitada (sem espaços):", `"${textoDigitado}"`);
+            console.log("Hash gerado:", hashDigitado);
+            console.log("Hash esperado:", HASH_CORRETO);
 
             if (hashDigitado === HASH_CORRETO) {
                 ativarSucesso();
@@ -144,36 +139,27 @@
         }
 
         function ativarSucesso() {
-            // Esconde o login e mostra a mensagem
             document.getElementById('interface-login').style.display = 'none';
             document.getElementById('mensagem-sucesso').style.display = 'block';
-
-            // Aguarda 5 segundos (5000ms) e redireciona
             setTimeout(() => {
                 window.location.href = LINK_DESTINO;
             }, 5000);
         }
 
         function ativarErro(elementoInput) {
-            // Adiciona classe de erro visual (tremer e ficar vermelho)
             elementoInput.classList.add('erro-animacao');
             setTimeout(() => {
                 elementoInput.classList.remove('erro-animacao');
-                elementoInput.value = ''; // Limpa o campo
+                elementoInput.value = ''; 
             }, 500);
         }
 
-        // Função criptográfica para gerar o Hash (Não mexer)
         async function gerarHashSHA256(message) {
             const msgBuffer = new TextEncoder().encode(message);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            return hashHex;
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
-
-        // FERRAMENTA DE AJUDA (Abra o console do navegador F12 se quiser gerar um novo hash)
-        console.log("Para gerar um novo hash de senha, digite no console: gerarHashSHA256('Sua Nova Senha').then(console.log)");
     </script>
 </body>
 </html>
