@@ -1,1 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal</title>
+    <link href="https://fonts.cdnfonts.com/css/upheaval" rel="stylesheet">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: 'Upheaval', sans-serif; /* Define a fonte global */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
 
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        input {
+            padding: 10px;
+            font-family: 'Upheaval', sans-serif;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            outline: none;
+            margin-bottom: 15px;
+            width: 300px;
+        }
+
+        button {
+            display: block;
+            margin: 0 auto;
+            padding: 10px 30px;
+            font-family: 'Upheaval', sans-serif;
+            font-size: 1.2rem;
+            background-color: white;
+            color: black;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="titulo">INSIRA A SENHA</h1>
+
+        <input type="text" id="senhaInput" placeholder="Digite aqui..." autocomplete="off">
+        <button onclick="verificarSenha()">Enviar</button>
+    </div>
+
+    <script>
+        function verificarSenha() {
+            const input = document.getElementById('senhaInput').value;
+            const corpo = document.body;
+
+            // Verificação da senha exata
+            if (input === "Eu Procuro a Verdade") {
+                // Debug visual: Muda o fundo para Verde Escuro
+                corpo.style.backgroundColor = "#006400"; 
+                alert("Acesso Concedido. Redirecionando...");
+                
+                // Futuramente, descomente a linha abaixo para redirecionar de verdade:
+                // window.location.href = "https://link-de-destino.com";
+            } else {
+                // Debug visual: Pisca vermelho (erro)
+                corpo.style.backgroundColor = "#8B0000";
+                setTimeout(() => {
+                    corpo.style.backgroundColor = "black";
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>
