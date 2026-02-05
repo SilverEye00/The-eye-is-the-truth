@@ -6,9 +6,10 @@
     <title>Banco de Dados S1</title>
     <link href="https://fonts.cdnfonts.com/css/upheaval" rel="stylesheet">
     <style>
+        /* ================= ESTILO VISUAL (PROJETO S1) ================= */
         body {
-            background-color: black;
-            color: white;
+            background-color: #050505;
+            color: #00FF00; /* Verde Neon */
             font-family: 'Upheaval', sans-serif;
             display: flex;
             justify-content: center;
@@ -17,6 +18,43 @@
             margin: 0;
             flex-direction: column;
             overflow: hidden;
+            text-shadow: 0 0 5px #00FF00, 0 0 10px #00AA00;
+        }
+
+        /* Scanlines */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* Flicker */
+        .flicker-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 255, 0, 0.02);
+            pointer-events: none;
+            z-index: 998;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.02; } 5% { opacity: 0.05; } 50% { opacity: 0.02; } 55% { opacity: 0.05; } 100% { opacity: 0.02; }
         }
 
         .container {
@@ -26,31 +64,35 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            position: relative;
+            z-index: 1;
         }
 
         /* --- ESTILO DO BOTÃO DE ARQUIVO (LINK) --- */
         .big-btn-link {
             display: inline-block;
-            border: 4px solid white;
+            border: 4px solid #00FF00;
             padding: 30px 50px;
             font-size: 2.5rem;
             margin-bottom: 60px; /* Espaço até a senha */
             background-color: transparent;
-            color: white;
+            color: #00FF00;
             text-transform: uppercase;
             letter-spacing: 2px;
-            text-decoration: none; /* Remove sublinhado de link */
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
+            text-shadow: 0 0 10px #00FF00;
         }
 
         .big-btn-link:hover {
-            background-color: white;
+            background-color: #00FF00;
             color: black;
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.6);
             transform: scale(1.02);
+            text-shadow: none;
         }
 
         /* Pequeno ícone ou detalhe visual no botão */
@@ -68,7 +110,7 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            border-top: 1px solid #333; /* Linha separadora sutil */
+            border-top: 1px solid #003300; /* Linha separadora sutil verde escura */
             padding-top: 40px;
         }
 
@@ -79,18 +121,19 @@
             font-family: 'Upheaval', sans-serif;
             font-size: 1.5rem;
             text-align: center;
-            border: 2px solid #555;
-            background: transparent;
-            color: white;
+            border: 2px solid #005500;
+            background: rgba(0, 20, 0, 0.6);
+            color: #00FF00;
             outline: none;
             width: 80%;
             max-width: 400px;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
         }
 
         input:focus {
-            border-color: white;
-            background-color: rgba(255,255,255,0.05);
+            border-color: #00FF00;
+            background-color: rgba(0, 30, 0, 0.8);
+            box-shadow: 0 0 10px #005500;
         }
 
         button.btn-enviar {
@@ -98,17 +141,18 @@
             padding: 12px 40px;
             font-family: 'Upheaval', sans-serif;
             font-size: 1.3rem;
-            background-color: #333;
-            color: white;
-            border: none;
+            background-color: #003300;
+            color: #00FF00;
+            border: 1px solid #00FF00;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         button.btn-enviar:hover {
-            background-color: #00FF00; /* Verde ao passar o mouse */
+            background-color: #00FF00; 
             color: black;
             box-shadow: 0 0 15px #00FF00;
+            transform: scale(1.05);
         }
 
         /* Mensagens */
@@ -117,12 +161,13 @@
             margin-top: 20px;
             font-size: 1.5rem;
             color: #00FF00;
-            text-shadow: 0 0 10px #00FF00;
+            text-shadow: 0 0 15px #00FF00;
         }
 
         .erro-animacao {
             animation: shake 0.5s;
             border-color: #ff0000 !important;
+            box-shadow: 0 0 10px #ff0000 !important;
         }
 
         @keyframes shake {
@@ -142,6 +187,9 @@
 </head>
 <body>
 
+    <div class="scanlines"></div>
+    <div class="flicker-overlay"></div>
+
     <div class="container">
         
         <a href="https://drive.google.com/drive/u/6/folders/1b_6cjE3l3_E_tik8WNtXiZLHF8aZDHxJ" class="big-btn-link" target="_blank">
@@ -155,7 +203,7 @@
 
         <div id="mensagem-sucesso">
             <p>ACESSO AUTORIZADO.</p>
-            <p style="font-size: 1rem; color: white;">INICIANDO PROTOCOLO DE REDIRECIONAMENTO...</p>
+            <p style="font-size: 1rem; color: #00FF00; opacity: 0.8;">INICIANDO PROTOCOLO DE REDIRECIONAMENTO...</p>
         </div>
     </div>
 
@@ -164,7 +212,7 @@
         // Para onde vai ao acertar a senha (ex: chat.html)
         const LINK_DESTINO_SENHA = "chat.html"; 
         
-        // Hash da senha (padrão: "eu procuro a verdade")
+        // Hash da senha
         const HASH_CORRETO = "5f8acfe6527e37585bdb248b86792329ca7fa70da44cf7737e6195fb0bf5e165"; 
         // =================================================
 
