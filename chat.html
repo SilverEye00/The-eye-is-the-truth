@@ -8,7 +8,7 @@
         /* ================= EFEITO CRT E ESTILO GERAL ================= */
         body {
             background-color: #050505;
-            color: #00FF00; /* Verde Neon */
+            color: #00FF00; /* Verde Neon Padrão */
             font-family: 'Courier New', 'Lucida Console', monospace;
             margin: 0;
             height: 100vh;
@@ -55,7 +55,7 @@
             100% { opacity: 0.02; }
         }
 
-        /* ================= TELA DE LOGIN (OVERLAY) ================= */
+        /* ================= TELA DE LOGIN ================= */
         #login-overlay {
             position: fixed;
             top: 0;
@@ -67,7 +67,7 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            z-index: 1000; /* Fica acima do chat */
+            z-index: 1000;
         }
 
         .login-box {
@@ -75,9 +75,26 @@
             border: 2px solid #00FF00;
             padding: 40px;
             box-shadow: 0 0 20px #005500;
+            background: #001100;
+            width: 300px;
         }
 
-        /* ================= LAYOUT DO CHAT (FULL SCREEN) ================= */
+        .login-input {
+            width: 100%;
+            margin-bottom: 15px;
+            background: transparent;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            font-size: 1.1rem;
+            outline: none;
+        }
+        
+        .login-input::placeholder { color: #005500; }
+
+        /* ================= AREA DO CHAT ================= */
         .chat-container {
             width: 100%;
             height: 100%;
@@ -93,7 +110,7 @@
             border-bottom: 2px solid #00FF00;
             text-align: center;
             background: #001100;
-            flex-shrink: 0; /* Impede que o header encolha */
+            flex-shrink: 0;
         }
 
         pre.ascii-art {
@@ -127,6 +144,7 @@
             font-size: 1.1rem;
         }
         
+        /* Bot do Sistema (Amarelo) */
         .msg.bot {
             color: #FFD700;
             text-shadow: 0 0 5px #FFD700;
@@ -134,8 +152,18 @@
             font-style: italic;
         }
 
+        /* Usuário Comum (Verde) */
         .msg.user {
             border-left: 4px solid #00FF00;
+        }
+
+        /* ADMIN (Vermelho Sangue) */
+        .msg.admin {
+            color: #FF0000;
+            text-shadow: 0 0 8px #FF0000;
+            border-left: 4px solid #FF0000;
+            font-weight: bold;
+            background: rgba(50, 0, 0, 0.3);
         }
 
         .msg-header {
@@ -153,7 +181,7 @@
             flex-shrink: 0;
         }
 
-        input {
+        #msgInput {
             flex: 1;
             background: transparent;
             border: 1px solid #005500;
@@ -163,11 +191,6 @@
             padding: 10px;
             outline: none;
             margin-right: 15px;
-        }
-
-        input:focus {
-            background-color: #002200;
-            border-color: #00FF00;
         }
 
         button {
@@ -189,10 +212,7 @@
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        @media (min-width: 600px) {
-            pre.ascii-art { font-size: 14px; line-height: 14px; }
-        }
+        @media (min-width: 600px) { pre.ascii-art { font-size: 14px; line-height: 14px; } }
     </style>
 </head>
 <body>
@@ -202,11 +222,13 @@
 
     <div id="login-overlay">
         <div class="login-box">
-            <h2 style="margin-top: 0;">IDENTIFICAÇÃO NECESSÁRIA</h2>
-            <p>Insira seu codinome para estabelecer uplink.</p>
-            <input type="text" id="usernameInput" placeholder="CODINOME..." autocomplete="off" style="width: 250px; margin-bottom: 20px;">
-            <br>
-            <button onclick="entrarNoChat()">CONECTAR</button>
+            <h2 style="margin-top: 0;">IDENTIFICAÇÃO</h2>
+            <p style="font-size: 0.8rem; margin-bottom: 20px;">INSIRA CREDENCIAIS DE ACESSO</p>
+            
+            <input type="text" id="usernameInput" class="login-input" placeholder="CODINOME" autocomplete="off">
+            <input type="password" id="passwordInput" class="login-input" placeholder="SENHA" autocomplete="off">
+            
+            <button onclick="fazerLogin()">CONECTAR</button>
         </div>
     </div>
 
@@ -218,12 +240,11 @@
  \__ \| || |__\ V / | _||   /| _|  \ V / | _| 
  |___/___|____|\_/  |___|_|_\|___|  |_|  |___|
 </pre>
-            <div style="margin-top: 10px; font-size: 0.8rem;">/// CANAL CRIPTOGRAFADO - V.2.1 ///</div>
+            <div style="margin-top: 10px; font-size: 0.8rem;">/// CANAL CRIPTOGRAFADO - V.2.2 (ADMIN ENABLED) ///</div>
         </header>
 
         <div id="mensagens">
-            <div class="msg bot">SILVER_EYE: SISTEMA ONLINE. AGUARDANDO IDENTIFICAÇÃO...</div>
-        </div>
+            </div>
 
         <div class="input-area">
             <input type="text" id="msgInput" placeholder="Inserir comando..." autocomplete="off">
@@ -233,7 +254,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // Importando 'set' para limpar o chat
+        import { getDatabase, ref, push, onChildAdded, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCsjAtBMNZLSjjrMteSuZDUCLM6_yixN4A",
@@ -250,101 +272,118 @@
         const db = getDatabase(app);
         const chatRef = ref(db, 'mensagens');
 
-        const input = document.getElementById('msgInput');
-        const listaMsg = document.getElementById('mensagens');
-        
-        // Variável para guardar o nome do usuário
+        // Variáveis de Estado
         let usuarioAtual = "";
+        let isAdmin = false;
 
         // ================= SISTEMA DE LOGIN =================
-        window.entrarNoChat = function() {
-            const nomeInput = document.getElementById('usernameInput');
-            const nome = nomeInput.value.trim().toUpperCase(); // Força maiúsculo para estilo
+        window.fazerLogin = function() {
+            const userInput = document.getElementById('usernameInput');
+            const passInput = document.getElementById('passwordInput');
+            
+            const user = userInput.value.trim();
+            const pass = passInput.value.trim();
 
-            if (nome !== "") {
-                usuarioAtual = nome;
-                document.getElementById('login-overlay').style.display = 'none';
-                
-                // Opcional: Avisar no chat que alguém entrou (apenas visual local)
-                criarElementoMsg("SYSTEM", `UPLINK ESTABELECIDO: ${usuarioAtual}`);
+            if (!user || !pass) {
+                alert("ERRO: DADOS INCOMPLETOS.");
+                return;
+            }
+
+            // Verifica Credenciais de ADMIN
+            if (user === "S1lv3rEy3" && pass === "_eye_") {
+                isAdmin = true;
+                usuarioAtual = user; // Mantém o case original para Admin
             } else {
-                alert("ERRO: IDENTIFICAÇÃO INVÁLIDA.");
-                nomeInput.focus();
+                isAdmin = false;
+                usuarioAtual = user.toUpperCase(); // Usuários comuns em CapsLock
+                // Senha de usuário comum é aceita qualquer uma (efeito estético)
+            }
+
+            // Esconde Login e mostra boas-vindas
+            document.getElementById('login-overlay').style.display = 'none';
+            if (isAdmin) {
+                criarElementoMsg("SYSTEM", "ACESSO ROOT CONCEDIDO. BEM-VINDO, ADMINISTRADOR.", false, true);
+            } else {
+                criarElementoMsg("SYSTEM", `UPLINK ESTABELECIDO: ${usuarioAtual}`, false, true);
             }
         };
-
-        // Permitir Enter no Login
-        document.getElementById('usernameInput').addEventListener("keypress", function(e) {
-            if (e.key === "Enter") window.entrarNoChat();
-        });
         // ====================================================
 
-        // ================= LÓGICA DO BOT =================
-        let tempoInativo = 0;
-        const LIMITE_INATIVIDADE = 20000; 
-        
-        const frasesBot = [
-            "Conexão instável...",
-            "Sinais do Estrangeiro detectados na região...",
-            "Alguém está observando...",
-            "O padrão se repete...",
-            "Criptografia oscilando...",
-            "Protocolo fantasma ativado..."
-        ];
+        // Envio de Mensagem
+        window.enviarMensagem = function() {
+            const input = document.getElementById('msgInput');
+            const texto = input.value.trim();
 
-        function resetarTimer() { tempoInativo = 0; }
-        document.addEventListener('mousemove', resetarTimer);
-        document.addEventListener('keypress', resetarTimer);
+            if (texto === "") return;
 
-        setInterval(() => {
-            if (usuarioAtual !== "") { // Só conta tempo se estiver logado
-                tempoInativo += 1000;
-                if (tempoInativo >= LIMITE_INATIVIDADE) {
-                    dispararBot();
-                    tempoInativo = 0;
+            // COMANDO SECRETO DO ADMIN: /clear
+            if (texto === "/clear") {
+                if (isAdmin) {
+                    // Limpa o banco de dados inteiro
+                    set(chatRef, null);
+                } else {
+                    alert("ACESSO NEGADO: COMANDO EXCLUSIVO PARA ADMINISTRADORES.");
                 }
+                input.value = "";
+                return;
             }
-        }, 1000);
 
-        function dispararBot() {
-            const fraseAleatoria = frasesBot[Math.floor(Math.random() * frasesBot.length)];
+            // Envia mensagem normal com a flag 'admin' se for o caso
             push(chatRef, {
-                usuario: "SILVER_EYE",
-                texto: fraseAleatoria,
+                usuario: usuarioAtual,
+                texto: texto,
+                admin: isAdmin, // Salva se é admin ou não
                 timestamp: Date.now()
             });
-        }
-        // =================================================
-
-        window.enviarMensagem = function() {
-            const texto = input.value.trim();
-            if (texto !== "" && usuarioAtual !== "") {
-                push(chatRef, {
-                    usuario: usuarioAtual,
-                    texto: texto,
-                    timestamp: Date.now()
-                });
-                input.value = "";
-                resetarTimer();
-            }
+            input.value = "";
+            resetarTimer();
         };
 
-        input.addEventListener("keypress", function(e) {
+        // Enviar com Enter
+        document.getElementById('msgInput').addEventListener("keypress", (e) => {
             if (e.key === "Enter") enviarMensagem();
         });
-
-        onChildAdded(chatRef, (data) => {
-            const msg = data.val();
-            criarElementoMsg(msg.usuario, msg.texto);
+        document.getElementById('passwordInput').addEventListener("keypress", (e) => {
+            if (e.key === "Enter") fazerLogin();
         });
 
-        function criarElementoMsg(usuario, texto) {
+
+        // ================= RECEBIMENTO DE DADOS =================
+        
+        // 1. Ouve novas mensagens chegando
+        onChildAdded(chatRef, (data) => {
+            const msg = data.val();
+            // Passa a flag msg.admin para a função de criar elemento
+            criarElementoMsg(msg.usuario, msg.texto, msg.admin);
+        });
+
+        // 2. Ouve se o banco foi limpo (para o comando /clear funcionar para todos)
+        onValue(chatRef, (snapshot) => {
+            if (!snapshot.exists()) {
+                // Se não existem dados, limpa a tela
+                document.getElementById('mensagens').innerHTML = '';
+            }
+        });
+
+        function criarElementoMsg(usuario, texto, ehAdmin, ehSistemaLoc) {
+            const listaMsg = document.getElementById('mensagens');
             const div = document.createElement('div');
             
-            if (usuario === "SILVER_EYE" || usuario === "SYSTEM") {
+            // Prioridade de estilos
+            if (ehSistemaLoc) {
+                // Mensagem local (login)
+                div.classList.add('msg', 'bot');
+                div.innerHTML = `<span class="msg-header">SYSTEM</span>${texto}`;
+            } else if (usuario === "SILVER_EYE") {
+                // Bot do servidor
                 div.classList.add('msg', 'bot');
                 div.innerHTML = `<span class="msg-header">${usuario}</span>${texto}`;
+            } else if (ehAdmin) {
+                // ADMIN (Vermelho)
+                div.classList.add('msg', 'admin');
+                div.innerHTML = `<span class="msg-header">★ ${usuario} ★</span>${texto}`;
             } else {
+                // Usuário Comum
                 div.classList.add('msg', 'user');
                 div.innerHTML = `<span class="msg-header">${usuario}</span>${texto}`;
             }
@@ -352,6 +391,29 @@
             listaMsg.appendChild(div);
             listaMsg.scrollTop = listaMsg.scrollHeight;
         }
+
+        // ================= LÓGICA DO BOT (SILVER_EYE) =================
+        let tempoInativo = 0;
+        const LIMITE_INATIVIDADE = 20000;
+        const frasesBot = ["Conexão instável...", "Rastreando sinal...", "Alguém ouve.", "O olho tudo vê."];
+
+        function resetarTimer() { tempoInativo = 0; }
+        document.addEventListener('mousemove', resetarTimer);
+        document.addEventListener('keypress', resetarTimer);
+
+        setInterval(() => {
+            if (usuarioAtual !== "") {
+                tempoInativo += 1000;
+                if (tempoInativo >= LIMITE_INATIVIDADE) {
+                    // Bot só fala se não for admin logado (para não atrapalhar adm)
+                    // Mas como é compartilhado, enviamos pro server.
+                    // Vamos manter simples: envia aleatório.
+                    const frase = frasesBot[Math.floor(Math.random() * frasesBot.length)];
+                    push(chatRef, { usuario: "SILVER_EYE", texto: frase, timestamp: Date.now() });
+                    tempoInativo = 0;
+                }
+            }
+        }, 1000);
     </script>
 </body>
 </html>
