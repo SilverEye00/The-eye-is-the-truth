@@ -19,7 +19,7 @@
             flex-direction: column;
             overflow: hidden;
             text-shadow: 0 0 5px #00FF00, 0 0 10px #00AA00;
-            user-select: none; /* Impede seleção de texto ao segurar botões */
+            user-select: none;
         }
 
         .scanlines {
@@ -74,13 +74,9 @@
 
         #radio-img {
             width: 100%;
-            opacity: 0.8;
+            opacity: 0.9;
             display: block;
-            /* Se não tiver imagem, o fundo serve como placeholder */
-            min-height: 150px; 
-            background: url('https://cdn-icons-png.flaticon.com/512/3659/3659784.png') no-repeat center center;
-            background-size: contain;
-            filter: sepia(100%) hue-rotate(90deg) saturate(300%) contrast(1.2);
+            border: 1px solid #003300;
         }
 
         /* Régua de Frequência */
@@ -100,7 +96,7 @@
             height: 100%;
             background-color: #FF0000;
             position: absolute;
-            left: 0%; /* Começa na esquerda */
+            left: 0%; 
             top: 0;
             box-shadow: 0 0 10px #FF0000;
         }
@@ -190,7 +186,7 @@
     <div class="container">
         
         <div class="radio-wrapper">
-            <img id="radio-img" src="" alt=""> 
+            <img id="radio-img" src="radio/radiopng.png" alt="Radio Device"> 
             
             <div class="tuner-display">
                 <div id="tuner-needle"></div>
@@ -203,8 +199,8 @@
         </button>
 
         <div id="interface-login">
-            <input type="text" id="senhaInput" placeholder="SENHA DE ACESSO" autocomplete="off">
-            <button class="btn-enviar" onclick="processarSenha()">ENVIAR</button>
+            <input type="text" id="senhaInput" placeholder="O QUE VOCE OUVIU?" autocomplete="off">
+            <button class="btn-enviar" onclick="processarSenha()">ENVIAR RESPOSTA</button>
         </div>
 
         <div id="mensagem-sucesso">
@@ -213,23 +209,23 @@
     </div>
 
     <audio id="audio-static" loop>
-        <source src="The-eye-is-the-truth/radio/Radio/Static Error - Sound Effect [dmp-sKMmjP4].mp3" type="audio/mpeg">
+        <source src="radio/Radio%20Static%20Error%20-%20Sound%20Effect%20%5Bdmp-sKMmjP4%5D.mp3" type="audio/mpeg">
     </audio>
     
     <audio id="audio-song1" loop>
-        <source src="The-eye-is-the-truth/radio/Radio/morse.wav" type="audio/mpeg">
+        <source src="radio/morse.wav" type="audio/wav">
     </audio>
 
     <audio id="audio-song2" loop>
-        <source src="The-eye-is-the-truth/radio/Radio/sstv_signal.wav" type="audio/mpeg">
+        <source src="radio/sstv_signal.wav" type="audio/wav">
     </audio>
 
     <script>
         // ================= CONFIGURAÇÕES DO RÁDIO =================
-        const FREQ_MUSICA_1 = 30; // Onde toca a primeira música (0 a 100)
-        const FREQ_MUSICA_2 = 80; // Onde toca a segunda música (0 a 100)
-        const TOLERANCIA = 5;     // Quão perto precisa estar para ouvir (Raio)
-        const VELOCIDADE_SCAN = 0.5; // Rapidez da agulha
+        const FREQ_MUSICA_1 = 30; // Frequência do Morse
+        const FREQ_MUSICA_2 = 80; // Frequência do SSTV
+        const TOLERANCIA = 5;     // Raio de captação
+        const VELOCIDADE_SCAN = 0.5; 
         // ==========================================================
 
         const needle = document.getElementById('tuner-needle');
@@ -240,21 +236,20 @@
         let animationFrame;
         let audioInitialized = false;
 
-        // Referências de Áudio
         const soundStatic = document.getElementById('audio-static');
         const sound1 = document.getElementById('audio-song1');
         const sound2 = document.getElementById('audio-song2');
 
-        // Inicializa áudio no primeiro clique (Browsers bloqueiam autoplay)
         function initAudio() {
             if (!audioInitialized) {
                 soundStatic.volume = 0;
                 sound1.volume = 0;
                 sound2.volume = 0;
                 
-                soundStatic.play();
-                sound1.play();
-                sound2.play();
+                // Tenta dar play em tudo
+                soundStatic.play().catch(e => console.log("Erro audio:", e));
+                sound1.play().catch(e => console.log("Erro audio:", e));
+                sound2.play().catch(e => console.log("Erro audio:", e));
                 
                 audioInitialized = true;
             }
@@ -274,15 +269,12 @@
         function scanLoop() {
             if (!scanning) return;
 
-            // Avança a frequência
             frequency += VELOCIDADE_SCAN;
-            if (frequency > 100) frequency = 0; // Volta pro começo se passar de 100
+            if (frequency > 100) frequency = 0; 
 
-            // Atualiza visual
             needle.style.left = frequency + '%';
             freqDisplay.innerText = frequency.toFixed(1) + ' MHz';
 
-            // MIXAGEM DE ÁUDIO (A MÁGICA)
             mixarAudio();
 
             animationFrame = requestAnimationFrame(scanLoop);
@@ -293,33 +285,32 @@
             let vol2 = 0;
             let staticVol = 1;
 
-            // Calcula distância da Música 1
+            // Distância Morse (Freq 30)
             let dist1 = Math.abs(frequency - FREQ_MUSICA_1);
             if (dist1 < TOLERANCIA) {
-                // Quanto mais perto, maior o volume (0 a 1)
                 vol1 = 1 - (dist1 / TOLERANCIA);
-                staticVol -= vol1; // Diminui chiado
+                staticVol -= vol1; 
             }
 
-            // Calcula distância da Música 2
+            // Distância SSTV (Freq 80)
             let dist2 = Math.abs(frequency - FREQ_MUSICA_2);
             if (dist2 < TOLERANCIA) {
                 vol2 = 1 - (dist2 / TOLERANCIA);
-                staticVol -= vol2; // Diminui chiado
+                staticVol -= vol2; 
             }
 
-            // Garante que volumes não fiquem negativos ou > 1
-            if (staticVol < 0.1) staticVol = 0.1; // Sempre um pouquinho de chiado de fundo
+            if (staticVol < 0.1) staticVol = 0.1; 
             
             sound1.volume = Math.max(0, Math.min(1, vol1));
             sound2.volume = Math.max(0, Math.min(1, vol2));
             soundStatic.volume = Math.max(0, Math.min(1, staticVol));
         }
 
-        // ================= SISTEMA DE LOGIN PADRÃO =================
+        // ================= LOGIN =================
         const LINK_DESTINO = "chat.html"; 
-        // Hash SHA-256 (Exemplo: "a resposta esta na musica")
-        // Gere sua senha no console com: gerarHashSHA256("sua senha").then(console.log)
+        
+        // Hash da senha
+        // Use: gerarHashSHA256("sua senha").then(console.log) para gerar
         const HASH_CORRETO = "861c63065887644c75dbfecd4a956df6336906d8595453a48fc5ca5cfa23d51f"; 
 
         async function processarSenha() {
