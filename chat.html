@@ -5,20 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>/// SILVER_EYE TERMINAL ///</title>
     <style>
-        /* ================= EFEITO CRT E ESTILO RETRO ================= */
+        /* ================= EFEITO CRT E ESTILO GERAL ================= */
         body {
             background-color: #050505;
             color: #00FF00; /* Verde Neon */
             font-family: 'Courier New', 'Lucida Console', monospace;
             margin: 0;
-            display: flex;
-            justify-content: center;
             height: 100vh;
             overflow: hidden;
-            text-shadow: 0 0 5px #00FF00, 0 0 10px #00AA00; /* Brilho neon */
+            text-shadow: 0 0 5px #00FF00, 0 0 10px #00AA00;
         }
 
-        /* Scanlines (Linhas de TV antiga) */
         .scanlines {
             position: fixed;
             top: 0;
@@ -33,11 +30,10 @@
                 rgba(0,0,0,0.2)
             );
             background-size: 100% 4px;
-            pointer-events: none; /* Deixa clicar através delas */
+            pointer-events: none;
             z-index: 999;
         }
 
-        /* Animação de Flicker (Tremido) */
         .flicker-overlay {
             position: fixed;
             top: 0;
@@ -54,44 +50,60 @@
         @keyframes flicker {
             0% { opacity: 0.02; }
             5% { opacity: 0.05; }
-            10% { opacity: 0.02; }
-            15% { opacity: 0.06; }
-            20% { opacity: 0.02; }
             50% { opacity: 0.02; }
             55% { opacity: 0.05; }
-            60% { opacity: 0.02; }
             100% { opacity: 0.02; }
         }
 
-        /* ================= LAYOUT DO CHAT ================= */
+        /* ================= TELA DE LOGIN (OVERLAY) ================= */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000; /* Fica acima do chat */
+        }
+
+        .login-box {
+            text-align: center;
+            border: 2px solid #00FF00;
+            padding: 40px;
+            box-shadow: 0 0 20px #005500;
+        }
+
+        /* ================= LAYOUT DO CHAT (FULL SCREEN) ================= */
         .chat-container {
             width: 100%;
-            max-width: 900px;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            border-left: 2px solid #005500;
-            border-right: 2px solid #005500;
-            height: 100%;
             background-color: rgba(0, 20, 0, 0.9);
             position: relative;
-            z-index: 1; /* Fica abaixo das scanlines */
+            z-index: 1;
         }
 
         header {
-            padding: 10px;
+            padding: 15px;
             border-bottom: 2px solid #00FF00;
             text-align: center;
             background: #001100;
+            flex-shrink: 0; /* Impede que o header encolha */
         }
 
-        /* Estilo para a arte ASCII */
         pre.ascii-art {
-            font-size: 10px; /* Pequeno para caber em mobile se precisar */
+            font-size: 10px;
             line-height: 10px;
             margin: 0;
             white-space: pre;
             overflow-x: hidden;
             font-weight: bold;
+            display: inline-block;
         }
 
         #mensagens {
@@ -103,29 +115,34 @@
             gap: 15px;
         }
 
-        #mensagens::-webkit-scrollbar { width: 10px; }
+        #mensagens::-webkit-scrollbar { width: 12px; }
         #mensagens::-webkit-scrollbar-track { background: black; }
         #mensagens::-webkit-scrollbar-thumb { background: #005500; border: 1px solid #00FF00; }
 
         .msg {
-            padding: 5px 10px;
+            padding: 8px 15px;
             word-wrap: break-word;
-            max-width: 90%;
+            max-width: 95%;
             animation: fadeIn 0.2s ease;
             font-size: 1.1rem;
         }
         
-        /* Estilo das mensagens do BOT */
         .msg.bot {
-            color: #FFD700; /* Âmbar/Dourado */
+            color: #FFD700;
             text-shadow: 0 0 5px #FFD700;
-            border-left: 3px solid #FFD700;
+            border-left: 4px solid #FFD700;
             font-style: italic;
         }
 
-        /* Estilo das mensagens do USUÁRIO */
         .msg.user {
-            border-left: 3px solid #00FF00;
+            border-left: 4px solid #00FF00;
+        }
+
+        .msg-header {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 4px;
+            display: block;
         }
 
         .input-area {
@@ -133,6 +150,7 @@
             border-top: 2px solid #00FF00;
             padding: 15px;
             background: #001100;
+            flex-shrink: 0;
         }
 
         input {
@@ -144,7 +162,7 @@
             font-size: 1.2rem;
             padding: 10px;
             outline: none;
-            margin-right: 10px;
+            margin-right: 15px;
         }
 
         input:focus {
@@ -157,7 +175,7 @@
             color: #00FF00;
             border: 1px solid #00FF00;
             font-family: 'Courier New', monospace;
-            padding: 10px 20px;
+            padding: 10px 30px;
             cursor: pointer;
             font-size: 1.2rem;
             font-weight: bold;
@@ -172,7 +190,6 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        /* Ajuste ASCII para telas maiores */
         @media (min-width: 600px) {
             pre.ascii-art { font-size: 14px; line-height: 14px; }
         }
@@ -183,6 +200,16 @@
     <div class="scanlines"></div>
     <div class="flicker-overlay"></div>
 
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="margin-top: 0;">IDENTIFICAÇÃO NECESSÁRIA</h2>
+            <p>Insira seu codinome para estabelecer uplink.</p>
+            <input type="text" id="usernameInput" placeholder="CODINOME..." autocomplete="off" style="width: 250px; margin-bottom: 20px;">
+            <br>
+            <button onclick="entrarNoChat()">CONECTAR</button>
+        </div>
+    </div>
+
     <div class="chat-container">
         <header>
 <pre class="ascii-art">
@@ -191,11 +218,11 @@
  \__ \| || |__\ V / | _||   /| _|  \ V / | _| 
  |___/___|____|\_/  |___|_|_\|___|  |_|  |___|
 </pre>
-            <div style="margin-top: 10px; font-size: 0.8rem;">/// CANAL CRIPTOGRAFADO - V.2.0 ///</div>
+            <div style="margin-top: 10px; font-size: 0.8rem;">/// CANAL CRIPTOGRAFADO - V.2.1 ///</div>
         </header>
 
         <div id="mensagens">
-            <div class="msg bot">SILVER_EYE: SISTEMA ONLINE. AGUARDANDO DADOS...</div>
+            <div class="msg bot">SILVER_EYE: SISTEMA ONLINE. AGUARDANDO IDENTIFICAÇÃO...</div>
         </div>
 
         <div class="input-area">
@@ -208,7 +235,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIGURAÇÃO FIREBASE (Do seu projeto s1lv3r-3ye)
         const firebaseConfig = {
             apiKey: "AIzaSyCsjAtBMNZLSjjrMteSuZDUCLM6_yixN4A",
             authDomain: "s1lv3r-3ye.firebaseapp.com",
@@ -226,42 +252,62 @@
 
         const input = document.getElementById('msgInput');
         const listaMsg = document.getElementById('mensagens');
+        
+        // Variável para guardar o nome do usuário
+        let usuarioAtual = "";
+
+        // ================= SISTEMA DE LOGIN =================
+        window.entrarNoChat = function() {
+            const nomeInput = document.getElementById('usernameInput');
+            const nome = nomeInput.value.trim().toUpperCase(); // Força maiúsculo para estilo
+
+            if (nome !== "") {
+                usuarioAtual = nome;
+                document.getElementById('login-overlay').style.display = 'none';
+                
+                // Opcional: Avisar no chat que alguém entrou (apenas visual local)
+                criarElementoMsg("SYSTEM", `UPLINK ESTABELECIDO: ${usuarioAtual}`);
+            } else {
+                alert("ERRO: IDENTIFICAÇÃO INVÁLIDA.");
+                nomeInput.focus();
+            }
+        };
+
+        // Permitir Enter no Login
+        document.getElementById('usernameInput').addEventListener("keypress", function(e) {
+            if (e.key === "Enter") window.entrarNoChat();
+        });
+        // ====================================================
 
         // ================= LÓGICA DO BOT =================
         let tempoInativo = 0;
-        const LIMITE_INATIVIDADE = 20000; // 20 segundos para o bot falar
+        const LIMITE_INATIVIDADE = 20000; 
         
-        // Frases aleatórias do bot
         const frasesBot = [
             "Conexão instável...",
             "Sinais do Estrangeiro detectados na região...",
             "Alguém está observando...",
             "O padrão se repete...",
-            "Criptografia oscilando. Mantenha a linha segura.",
-            "Não confie no estático."
+            "Criptografia oscilando...",
+            "Protocolo fantasma ativado..."
         ];
 
-        // Reseta o timer sempre que o mouse mexe ou tecla é pressionada
-        function resetarTimer() {
-            tempoInativo = 0;
-        }
+        function resetarTimer() { tempoInativo = 0; }
         document.addEventListener('mousemove', resetarTimer);
         document.addEventListener('keypress', resetarTimer);
 
-        // Checagem constante de inatividade
         setInterval(() => {
-            tempoInativo += 1000; // Soma 1 segundo
-            
-            if (tempoInativo >= LIMITE_INATIVIDADE) {
-                dispararBot();
-                tempoInativo = 0; // Reseta para não spammar loucamente
+            if (usuarioAtual !== "") { // Só conta tempo se estiver logado
+                tempoInativo += 1000;
+                if (tempoInativo >= LIMITE_INATIVIDADE) {
+                    dispararBot();
+                    tempoInativo = 0;
+                }
             }
         }, 1000);
 
         function dispararBot() {
             const fraseAleatoria = frasesBot[Math.floor(Math.random() * frasesBot.length)];
-            
-            // Envia para o Firebase como se fosse um usuário chamado SILVER_EYE
             push(chatRef, {
                 usuario: "SILVER_EYE",
                 texto: fraseAleatoria,
@@ -270,17 +316,16 @@
         }
         // =================================================
 
-        // Enviar mensagem do Usuário
         window.enviarMensagem = function() {
             const texto = input.value.trim();
-            if (texto !== "") {
+            if (texto !== "" && usuarioAtual !== "") {
                 push(chatRef, {
-                    usuario: "VISITANTE", // Nome padrão do usuário
+                    usuario: usuarioAtual,
                     texto: texto,
                     timestamp: Date.now()
                 });
                 input.value = "";
-                resetarTimer(); // Garante que o bot não fale logo depois de você
+                resetarTimer();
             }
         };
 
@@ -288,7 +333,6 @@
             if (e.key === "Enter") enviarMensagem();
         });
 
-        // Receber mensagens (Ouve tanto usuários quanto o Bot)
         onChildAdded(chatRef, (data) => {
             const msg = data.val();
             criarElementoMsg(msg.usuario, msg.texto);
@@ -297,13 +341,12 @@
         function criarElementoMsg(usuario, texto) {
             const div = document.createElement('div');
             
-            // Verifica se é o Bot ou Usuário para estilizar
-            if (usuario === "SILVER_EYE") {
+            if (usuario === "SILVER_EYE" || usuario === "SYSTEM") {
                 div.classList.add('msg', 'bot');
-                div.innerText = "SILVER_EYE: " + texto;
+                div.innerHTML = `<span class="msg-header">${usuario}</span>${texto}`;
             } else {
                 div.classList.add('msg', 'user');
-                div.innerText = "> " + texto;
+                div.innerHTML = `<span class="msg-header">${usuario}</span>${texto}`;
             }
 
             listaMsg.appendChild(div);
