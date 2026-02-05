@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canal Seguro</title>
+    <link href="https://fonts.cdnfonts.com/css/upheaval" rel="stylesheet">
+    <style>
+        body {
+            background-color: black;
+            color: #00FF00;
+            font-family: 'Upheaval', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #333;
+            border-right: 1px solid #333;
+            height: 100%;
+        }
+
+        header {
+            padding: 20px;
+            border-bottom: 2px solid #00FF00;
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        #mensagens {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #mensagens::-webkit-scrollbar { width: 8px; }
+        #mensagens::-webkit-scrollbar-thumb { background: #005500; }
+
+        .msg {
+            background-color: #001100;
+            padding: 10px;
+            border-left: 3px solid #00FF00;
+            word-wrap: break-word;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .msg.sistema {
+            border-left: 3px solid red;
+            color: red;
+            align-self: center;
+        }
+
+        .input-area {
+            display: flex;
+            border-top: 2px solid #00FF00;
+            padding: 10px;
+            background: black;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-family: 'Upheaval', sans-serif;
+            font-size: 1.2rem;
+            padding: 10px;
+            outline: none;
+        }
+
+        button {
+            background: #00FF00;
+            color: black;
+            border: none;
+            font-family: 'Upheaval', sans-serif;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        button:hover { background: #00cc00; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <header>/// CANAL CRIPTOGRAFADO ///</header>
+        <div id="mensagens">
+            <div class="msg sistema">CONEXÃO ESTABELECIDA...</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Digite sua mensagem..." autocomplete="off">
+            <button onclick="enviarMensagem()">ENVIAR</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Configuração extraída da sua imagem
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsjAtBMNZLSjjrMteSuZDUCLM6_yixN4A",
+            authDomain: "s1lv3r-3ye.firebaseapp.com",
+            databaseURL: "https://s1lv3r-3ye-default-rtdb.firebaseio.com",
+            projectId: "s1lv3r-3ye",
+            storageBucket: "s1lv3r-3ye.firebasestorage.app",
+            messagingSenderId: "890533866689",
+            appId: "1:890533866689:web:e72865ca464f4d6138b840",
+            measurementId: "G-L021HC6N31"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const chatRef = ref(db, 'mensagens');
+
+        const input = document.getElementById('msgInput');
+        const listaMsg = document.getElementById('mensagens');
+
+        window.enviarMensagem = function() {
+            const texto = input.value.trim();
+            if (texto !== "") {
+                push(chatRef, {
+                    texto: texto,
+                    timestamp: Date.now()
+                });
+                input.value = "";
+            }
+        };
+
+        input.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") enviarMensagem();
+        });
+
+        onChildAdded(chatRef, (data) => {
+            const msg = data.val();
+            criarElementoMsg(msg.texto);
+        });
+
+        function criarElementoMsg(texto) {
+            const div = document.createElement('div');
+            div.classList.add('msg');
+            div.innerText = "> " + texto;
+            listaMsg.appendChild(div);
+            listaMsg.scrollTop = listaMsg.scrollHeight;
+        }
+    </script>
+</body>
+</html>
