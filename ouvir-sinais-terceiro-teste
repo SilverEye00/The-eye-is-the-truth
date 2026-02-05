@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banco de Dados S1</title>
+    <link href="https://fonts.cdnfonts.com/css/upheaval" rel="stylesheet">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: 'Upheaval', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 700px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- ESTILO DO BOTÃO DE ARQUIVO (LINK) --- */
+        .big-btn-link {
+            display: inline-block;
+            border: 4px solid white;
+            padding: 30px 50px;
+            font-size: 2.5rem;
+            margin-bottom: 60px; /* Espaço até a senha */
+            background-color: transparent;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-decoration: none; /* Remove sublinhado de link */
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .big-btn-link:hover {
+            background-color: white;
+            color: black;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+            transform: scale(1.02);
+        }
+
+        /* Pequeno ícone ou detalhe visual no botão */
+        .big-btn-link::after {
+            content: " [CLICK TO ACCESS]";
+            display: block;
+            font-size: 1rem;
+            margin-top: 10px;
+            opacity: 0.7;
+        }
+
+        /* --- ESTILO DA ÁREA DE SENHA --- */
+        #interface-login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            border-top: 1px solid #333; /* Linha separadora sutil */
+            padding-top: 40px;
+        }
+
+        input {
+            display: block;
+            margin-bottom: 20px;
+            padding: 15px;
+            font-family: 'Upheaval', sans-serif;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 2px solid #555;
+            background: transparent;
+            color: white;
+            outline: none;
+            width: 80%;
+            max-width: 400px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: white;
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        button.btn-enviar {
+            display: block;
+            padding: 12px 40px;
+            font-family: 'Upheaval', sans-serif;
+            font-size: 1.3rem;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button.btn-enviar:hover {
+            background-color: #00FF00; /* Verde ao passar o mouse */
+            color: black;
+            box-shadow: 0 0 15px #00FF00;
+        }
+
+        /* Mensagens */
+        #mensagem-sucesso {
+            display: none;
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: #00FF00;
+            text-shadow: 0 0 10px #00FF00;
+        }
+
+        .erro-animacao {
+            animation: shake 0.5s;
+            border-color: #ff0000 !important;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <a href="https://drive.google.com/drive/u/6/folders/1b_6cjE3l3_E_tik8WNtXiZLHF8aZDHxJ" class="big-btn-link" target="_blank">
+            ARQUIVOS PROJETO S1
+        </a>
+        
+        <div id="interface-login">
+            <input type="password" id="senhaInput" placeholder="SENHA DE ACESSO" autocomplete="off">
+            <button class="btn-enviar" onclick="processarSenha()">VALIDAR</button>
+        </div>
+
+        <div id="mensagem-sucesso">
+            <p>ACESSO AUTORIZADO.</p>
+            <p style="font-size: 1rem; color: white;">INICIANDO PROTOCOLO DE REDIRECIONAMENTO...</p>
+        </div>
+    </div>
+
+    <script>
+        // ================= CONFIGURAÇÕES =================
+        // Para onde vai ao acertar a senha (ex: chat.html)
+        const LINK_DESTINO_SENHA = "chat.html"; 
+        
+        // Hash da senha (padrão: "eu procuro a verdade")
+        const HASH_CORRETO = "0b79a4a9db031ea287d7adb37e7e7e9ca1d3a64dc72cacc7d4efbb82cf614df4"; 
+        // =================================================
+
+        async function processarSenha() {
+            const input = document.getElementById('senhaInput');
+            const textoDigitado = input.value.trim().toLowerCase(); 
+            const hashDigitado = await gerarHashSHA256(textoDigitado);
+
+            if (hashDigitado === HASH_CORRETO) {
+                ativarSucesso();
+            } else {
+                ativarErro(input);
+            }
+        }
+
+        function ativarSucesso() {
+            // Esconde o input e botão, mostra msg de sucesso
+            document.getElementById('interface-login').style.display = 'none';
+            document.getElementById('mensagem-sucesso').style.display = 'block';
+            
+            setTimeout(() => {
+                window.location.href = LINK_DESTINO_SENHA;
+            }, 3000);
+        }
+
+        function ativarErro(elementoInput) {
+            elementoInput.classList.add('erro-animacao');
+            setTimeout(() => {
+                elementoInput.classList.remove('erro-animacao');
+                elementoInput.value = ''; 
+            }, 500);
+        }
+
+        async function gerarHashSHA256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        document.getElementById('senhaInput').addEventListener("keypress", function(e) {
+            if (e.key === "Enter") processarSenha();
+        });
+    </script>
+</body>
+</html>
