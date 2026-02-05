@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sintonizador S1</title>
+    <link href="https://fonts.cdnfonts.com/css/upheaval" rel="stylesheet">
+    <style>
+        /* ================= ESTILO VISUAL (PADRÃO S1) ================= */
+        body {
+            background-color: #050505;
+            color: #00FF00;
+            font-family: 'Upheaval', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            overflow: hidden;
+            text-shadow: 0 0 5px #00FF00, 0 0 10px #00AA00;
+            user-select: none; /* Impede seleção de texto ao segurar botões */
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .flicker-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 255, 0, 0.02);
+            pointer-events: none;
+            z-index: 998;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.02; } 5% { opacity: 0.05; } 50% { opacity: 0.02; } 55% { opacity: 0.05; } 100% { opacity: 0.02; }
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ================= ESTILO DO RÁDIO ================= */
+        .radio-wrapper {
+            position: relative;
+            width: 300px;
+            margin-bottom: 20px;
+            border: 4px solid #005500;
+            padding: 10px;
+            background: #001100;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+        }
+
+        #radio-img {
+            width: 100%;
+            opacity: 0.8;
+            display: block;
+            /* Se não tiver imagem, o fundo serve como placeholder */
+            min-height: 150px; 
+            background: url('https://cdn-icons-png.flaticon.com/512/3659/3659784.png') no-repeat center center;
+            background-size: contain;
+            filter: sepia(100%) hue-rotate(90deg) saturate(300%) contrast(1.2);
+        }
+
+        /* Régua de Frequência */
+        .tuner-display {
+            width: 100%;
+            height: 30px;
+            background: #000;
+            margin-top: 10px;
+            border: 2px solid #00FF00;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* A Agulha Vermelha */
+        #tuner-needle {
+            width: 4px;
+            height: 100%;
+            background-color: #FF0000;
+            position: absolute;
+            left: 0%; /* Começa na esquerda */
+            top: 0;
+            box-shadow: 0 0 10px #FF0000;
+        }
+
+        /* Texto da Frequência */
+        #freq-number {
+            font-size: 1.5rem;
+            margin-top: 5px;
+            letter-spacing: 2px;
+        }
+
+        /* Botão SCAN (Segurar) */
+        .btn-scan {
+            margin-top: 15px;
+            margin-bottom: 40px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: 2px solid #00FF00;
+            background: transparent;
+            color: #00FF00;
+            font-family: 'Upheaval', sans-serif;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .btn-scan:active {
+            background: #00FF00;
+            color: black;
+        }
+
+        /* ================= LOGIN PADRÃO ================= */
+        #interface-login {
+            width: 100%;
+            border-top: 1px solid #003300;
+            padding-top: 20px;
+        }
+
+        input {
+            display: block;
+            margin: 0 auto 20px auto;
+            padding: 15px;
+            font-family: 'Upheaval', sans-serif;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 2px solid #005500;
+            background: rgba(0, 20, 0, 0.6);
+            color: #00FF00;
+            outline: none;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        input:focus {
+            border-color: #00FF00;
+            box-shadow: 0 0 10px #005500;
+        }
+
+        button.btn-enviar {
+            display: block;
+            margin: 0 auto;
+            padding: 12px 40px;
+            font-family: 'Upheaval', sans-serif;
+            font-size: 1.3rem;
+            background-color: #003300;
+            color: #00FF00;
+            border: 1px solid #00FF00;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button.btn-enviar:hover {
+            background-color: #00FF00;
+            color: black;
+            box-shadow: 0 0 15px #00FF00;
+        }
+
+        #mensagem-sucesso { display: none; font-size: 2rem; margin-top: 20px; }
+        .erro-animacao { animation: shake 0.5s; border-color: #ff0000 !important; }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 20% { transform: translate(-3px, 0px); } 100% { transform: translate(0, 0); } }
+    </style>
+</head>
+<body>
+
+    <div class="scanlines"></div>
+    <div class="flicker-overlay"></div>
+
+    <div class="container">
+        
+        <div class="radio-wrapper">
+            <img id="radio-img" src="" alt=""> 
+            
+            <div class="tuner-display">
+                <div id="tuner-needle"></div>
+            </div>
+            <div id="freq-number">00.0 MHz</div>
+        </div>
+
+        <button class="btn-scan" onmousedown="iniciarScan()" onmouseup="pararScan()" onmouseleave="pararScan()" ontouchstart="iniciarScan()" ontouchend="pararScan()">
+            SEGURE PARA SINTONIZAR >>>
+        </button>
+
+        <div id="interface-login">
+            <input type="text" id="senhaInput" placeholder="O QUE VOCE OUVIU?" autocomplete="off">
+            <button class="btn-enviar" onclick="processarSenha()">ENVIAR RESPOSTA</button>
+        </div>
+
+        <div id="mensagem-sucesso">
+            <p>RESPOSTA CORRETA.</p>
+        </div>
+    </div>
+
+    <audio id="audio-static" loop>
+        <source src="https://soundbible.com/mp3/Radio%20Static-SoundBible.com-1162486982.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="audio-song1" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="audio-song2" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // ================= CONFIGURAÇÕES DO RÁDIO =================
+        const FREQ_MUSICA_1 = 30; // Onde toca a primeira música (0 a 100)
+        const FREQ_MUSICA_2 = 80; // Onde toca a segunda música (0 a 100)
+        const TOLERANCIA = 5;     // Quão perto precisa estar para ouvir (Raio)
+        const VELOCIDADE_SCAN = 0.5; // Rapidez da agulha
+        // ==========================================================
+
+        const needle = document.getElementById('tuner-needle');
+        const freqDisplay = document.getElementById('freq-number');
+        
+        let frequency = 0;
+        let scanning = false;
+        let animationFrame;
+        let audioInitialized = false;
+
+        // Referências de Áudio
+        const soundStatic = document.getElementById('audio-static');
+        const sound1 = document.getElementById('audio-song1');
+        const sound2 = document.getElementById('audio-song2');
+
+        // Inicializa áudio no primeiro clique (Browsers bloqueiam autoplay)
+        function initAudio() {
+            if (!audioInitialized) {
+                soundStatic.volume = 0;
+                sound1.volume = 0;
+                sound2.volume = 0;
+                
+                soundStatic.play();
+                sound1.play();
+                sound2.play();
+                
+                audioInitialized = true;
+            }
+        }
+
+        function iniciarScan() {
+            initAudio();
+            scanning = true;
+            scanLoop();
+        }
+
+        function pararScan() {
+            scanning = false;
+            cancelAnimationFrame(animationFrame);
+        }
+
+        function scanLoop() {
+            if (!scanning) return;
+
+            // Avança a frequência
+            frequency += VELOCIDADE_SCAN;
+            if (frequency > 100) frequency = 0; // Volta pro começo se passar de 100
+
+            // Atualiza visual
+            needle.style.left = frequency + '%';
+            freqDisplay.innerText = frequency.toFixed(1) + ' MHz';
+
+            // MIXAGEM DE ÁUDIO (A MÁGICA)
+            mixarAudio();
+
+            animationFrame = requestAnimationFrame(scanLoop);
+        }
+
+        function mixarAudio() {
+            let vol1 = 0;
+            let vol2 = 0;
+            let staticVol = 1;
+
+            // Calcula distância da Música 1
+            let dist1 = Math.abs(frequency - FREQ_MUSICA_1);
+            if (dist1 < TOLERANCIA) {
+                // Quanto mais perto, maior o volume (0 a 1)
+                vol1 = 1 - (dist1 / TOLERANCIA);
+                staticVol -= vol1; // Diminui chiado
+            }
+
+            // Calcula distância da Música 2
+            let dist2 = Math.abs(frequency - FREQ_MUSICA_2);
+            if (dist2 < TOLERANCIA) {
+                vol2 = 1 - (dist2 / TOLERANCIA);
+                staticVol -= vol2; // Diminui chiado
+            }
+
+            // Garante que volumes não fiquem negativos ou > 1
+            if (staticVol < 0.1) staticVol = 0.1; // Sempre um pouquinho de chiado de fundo
+            
+            sound1.volume = Math.max(0, Math.min(1, vol1));
+            sound2.volume = Math.max(0, Math.min(1, vol2));
+            soundStatic.volume = Math.max(0, Math.min(1, staticVol));
+        }
+
+        // ================= SISTEMA DE LOGIN PADRÃO =================
+        const LINK_DESTINO = "chat.html"; 
+        // Hash SHA-256 (Exemplo: "a resposta esta na musica")
+        // Gere sua senha no console com: gerarHashSHA256("sua senha").then(console.log)
+        const HASH_CORRETO = "861c63065887644c75dbfecd4a956df6336906d8595453a48fc5ca5cfa23d51f"; 
+
+        async function processarSenha() {
+            const input = document.getElementById('senhaInput');
+            const textoDigitado = input.value.trim().toLowerCase(); 
+            const hashDigitado = await gerarHashSHA256(textoDigitado);
+
+            if (hashDigitado === HASH_CORRETO) {
+                document.getElementById('interface-login').style.display = 'none';
+                document.getElementById('mensagem-sucesso').style.display = 'block';
+                setTimeout(() => window.location.href = LINK_DESTINO, 3000);
+            } else {
+                input.classList.add('erro-animacao');
+                setTimeout(() => {
+                    input.classList.remove('erro-animacao');
+                    input.value = ''; 
+                }, 500);
+            }
+        }
+
+        async function gerarHashSHA256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        document.getElementById('senhaInput').addEventListener("keypress", (e) => {
+            if (e.key === "Enter") processarSenha();
+        });
+    </script>
+</body>
+</html>
