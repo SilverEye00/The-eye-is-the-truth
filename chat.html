@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>/// SILVER_EYE TERMINAL ///</title>
     <style>
-        /* ================= ESTILO GERAL (MANTIDO) ================= */
+        /* ================= ESTILO GERAL ================= */
         body {
             background-color: #050505;
             color: #00FF00;
@@ -44,7 +44,7 @@
             0% { opacity: 0.02; } 5% { opacity: 0.05; } 50% { opacity: 0.02; } 55% { opacity: 0.05; } 100% { opacity: 0.02; }
         }
 
-        /* ================= TELA DE LOGIN ================= */
+        /* ================= LOGIN ================= */
         #login-overlay {
             position: fixed;
             top: 0;
@@ -81,12 +81,7 @@
             outline: none;
         }
         
-        .status-msg {
-            font-size: 0.8rem;
-            color: #FFFF00;
-            margin-top: 10px;
-            min-height: 1.2em;
-        }
+        .status-msg { font-size: 0.8rem; color: #FFFF00; margin-top: 10px; min-height: 1.2em; }
 
         /* ================= CHAT ================= */
         .chat-container {
@@ -143,12 +138,24 @@
         .msg.admin { color: #FF0000; text-shadow: 0 0 8px #FF0000; border-left: 4px solid #FF0000; font-weight: bold; background: rgba(50, 0, 0, 0.3); }
         .msg-header { font-size: 0.8rem; opacity: 0.8; margin-bottom: 4px; display: block; }
 
+        /* Estilo para imagens no chat */
+        .chat-img {
+            max-width: 100%;
+            max-height: 300px;
+            border: 2px solid #005500;
+            margin-top: 5px;
+            display: block;
+            opacity: 0.9;
+        }
+        .msg.admin .chat-img { border-color: #FF0000; }
+
         .input-area {
             display: flex;
             border-top: 2px solid #00FF00;
             padding: 15px;
             background: #001100;
             flex-shrink: 0;
+            align-items: center;
         }
 
         #msgInput {
@@ -168,12 +175,17 @@
             color: #00FF00;
             border: 1px solid #00FF00;
             font-family: 'Courier New', monospace;
-            padding: 10px 30px;
+            padding: 10px 20px;
             cursor: pointer;
             font-size: 1.2rem;
             font-weight: bold;
+            margin-left: 5px;
         }
         button:hover { background: #00FF00; color: black; box-shadow: 0 0 15px #00FF00; }
+
+        /* Botão de Upload Escondido */
+        #fileInput { display: none; }
+        .btn-img { padding: 10px 15px; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @media (min-width: 600px) { pre.ascii-art { font-size: 14px; line-height: 14px; } }
@@ -188,10 +200,8 @@
         <div class="login-box">
             <h2 style="margin-top: 0;">IDENTIFICAÇÃO</h2>
             <p style="font-size: 0.8rem; margin-bottom: 20px;">INSIRA CREDENCIAIS</p>
-            
             <input type="text" id="usernameInput" class="login-input" placeholder="CODINOME" autocomplete="off">
             <input type="password" id="passwordInput" class="login-input" placeholder="SENHA" autocomplete="off">
-            
             <button onclick="fazerLogin()">CONECTAR</button>
             <div id="loginStatus" class="status-msg"></div>
         </div>
@@ -205,20 +215,22 @@
  \__ \| || |__\ V / | _||   /| _|  \ V / | _| 
  |___/___|____|\_/  |___|_|_\|___|  |_|  |___|
 </pre>
-            <div style="margin-top: 10px; font-size: 0.8rem;">/// CANAL CRIPTOGRAFADO - V.3.0 (SECURE DB) ///</div>
+            <div style="margin-top: 10px; font-size: 0.8rem;">/// CANAL CRIPTOGRAFADO - V.4.0 (IMG SUPPORT) ///</div>
         </header>
 
         <div id="mensagens"></div>
 
         <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Inserir comando..." autocomplete="off">
-            <button onclick="enviarMensagem()">TRANSMITIR</button>
+            <input type="file" id="fileInput" accept="image/*">
+            <button class="btn-img" onclick="document.getElementById('fileInput').click()" title="Enviar Imagem">[IMG]</button>
+            
+            <input type="text" id="msgInput" placeholder="Digite ou Cole Imagem (Ctrl+V)..." autocomplete="off">
+            <button onclick="enviarMensagem()">ENVIAR</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // Importando 'get' e 'child' para ler dados
         import { getDatabase, ref, push, onChildAdded, set, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
@@ -235,126 +247,137 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const chatRef = ref(db, 'mensagens');
-        const dbRef = ref(db); // Referência raiz para consultas
+        const dbRef = ref(db);
 
         let usuarioAtual = "";
         let isAdmin = false;
 
-        // ================= SISTEMA DE LOGIN SEGURO =================
+        // ================= LOGIN =================
         window.fazerLogin = async function() {
             const userInput = document.getElementById('usernameInput');
             const passInput = document.getElementById('passwordInput');
             const statusDiv = document.getElementById('loginStatus');
-            
-            // Remove caracteres proibidos em chaves do Firebase
             const user = userInput.value.trim().replace(/[.#$[\]]/g, "_");
             const pass = passInput.value.trim();
 
-            if (!user || !pass) {
-                statusDiv.innerText = "DADOS INCOMPLETOS.";
-                return;
-            }
-
+            if (!user || !pass) { statusDiv.innerText = "DADOS INCOMPLETOS."; return; }
             statusDiv.innerText = "VERIFICANDO...";
 
-            // 1. CHECAGEM DE ADMIN (Hardcoded Override)
             if (user === "S1lv3rEy3" && pass === "_eye_") {
-                autorizarAcesso(user, true);
-                return;
+                autorizarAcesso(user, true); return;
             } else if (user === "S1lv3rEy3") {
-                statusDiv.innerText = "ACESSO NEGADO: SENHA DE ADMIN INCORRETA.";
-                return;
+                statusDiv.innerText = "SENHA DE ADMIN INCORRETA."; return;
             }
 
-            // 2. CHECAGEM DE USUÁRIO COMUM (Banco de Dados)
             try {
-                // Busca o usuário no nó 'users'
                 const snapshot = await get(child(dbRef, `users/${user}`));
-
                 if (snapshot.exists()) {
-                    // Usuário EXISTE: Checar senha
-                    const dados = snapshot.val();
-                    if (dados.senha === pass) {
-                        autorizarAcesso(user.toUpperCase(), false);
-                    } else {
-                        statusDiv.innerText = "ERRO: SENHA INCORRETA.";
-                        passInput.value = ""; // Limpa senha
-                    }
+                    if (snapshot.val().senha === pass) autorizarAcesso(user.toUpperCase(), false);
+                    else { statusDiv.innerText = "SENHA INCORRETA."; passInput.value = ""; }
                 } else {
-                    // Usuário NÃO EXISTE: Registrar novo
-                    await set(ref(db, `users/${user}`), {
-                        senha: pass,
-                        criadoEm: Date.now()
-                    });
+                    await set(ref(db, `users/${user}`), { senha: pass, criadoEm: Date.now() });
                     autorizarAcesso(user.toUpperCase(), false);
                 }
-            } catch (error) {
-                console.error(error);
-                statusDiv.innerText = "ERRO DE CONEXÃO.";
-            }
+            } catch (error) { console.error(error); statusDiv.innerText = "ERRO DE CONEXÃO."; }
         };
 
         function autorizarAcesso(nome, adminFlag) {
-            usuarioAtual = nome;
-            isAdmin = adminFlag;
+            usuarioAtual = nome; isAdmin = adminFlag;
             document.getElementById('login-overlay').style.display = 'none';
-            
-            if (isAdmin) {
-                criarElementoMsg("SYSTEM", "ACESSO ROOT CONCEDIDO. BEM-VINDO, ADMINISTRADOR.", false, true);
-            } else {
-                criarElementoMsg("SYSTEM", `UPLINK ESTABELECIDO: ${usuarioAtual}`, false, true);
-            }
+            criarElementoMsg("SYSTEM", isAdmin ? "ACESSO ROOT CONCEDIDO." : `UPLINK ESTABELECIDO: ${usuarioAtual}`, false, true);
         }
 
-        // Enter no Login
-        document.getElementById('passwordInput').addEventListener("keypress", (e) => {
-            if (e.key === "Enter") fazerLogin();
-        });
+        document.getElementById('passwordInput').addEventListener("keypress", (e) => { if (e.key === "Enter") fazerLogin(); });
 
-        // ================= CHAT LOGIC =================
+        // ================= ENVIO DE TEXTO =================
         window.enviarMensagem = function() {
             const input = document.getElementById('msgInput');
             const texto = input.value.trim();
 
             if (texto === "") return;
-
-            // COMANDO /clear
             if (texto === "/clear") {
-                if (isAdmin) {
-                    set(chatRef, null); // Limpa mensagens
-                } else {
-                    alert("ACESSO NEGADO.");
-                }
-                input.value = "";
-                return;
+                if (isAdmin) set(chatRef, null); else alert("ACESSO NEGADO.");
+                input.value = ""; return;
             }
 
-            push(chatRef, {
-                usuario: usuarioAtual,
-                texto: texto,
-                admin: isAdmin,
-                timestamp: Date.now()
-            });
-            input.value = "";
-            resetarTimer();
+            push(chatRef, { usuario: usuarioAtual, texto: texto, admin: isAdmin, timestamp: Date.now() });
+            input.value = ""; resetarTimer();
         };
 
-        document.getElementById('msgInput').addEventListener("keypress", (e) => {
-            if (e.key === "Enter") enviarMensagem();
+        document.getElementById('msgInput').addEventListener("keypress", (e) => { if (e.key === "Enter") enviarMensagem(); });
+
+        // ================= ENVIO DE IMAGEM (UPLOAD & PASTE) =================
+        
+        // 1. Processar Botão de Upload
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            if (this.files && this.files[0]) processarImagem(this.files[0]);
         });
 
-        // Receber Mensagens
-        onChildAdded(chatRef, (data) => {
-            const msg = data.val();
-            criarElementoMsg(msg.usuario, msg.texto, msg.admin);
-        });
-
-        // Detectar Limpeza do Chat
-        onValue(chatRef, (snapshot) => {
-            if (!snapshot.exists()) {
-                document.getElementById('mensagens').innerHTML = '';
+        // 2. Processar Colar (Ctrl+V)
+        document.getElementById('msgInput').addEventListener('paste', function(e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.includes('image/')) {
+                    const blob = item.getAsFile();
+                    processarImagem(blob);
+                }
             }
         });
+
+        // Função que comprime e envia a imagem
+        function processarImagem(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    // Cria canvas para redimensionar (Evita travar o banco de dados)
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Define tamanho máximo (600px de largura)
+                    const MAX_WIDTH = 600;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Converte para Base64 (JPEG qualidade 0.7)
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                    // Envia para o Firebase
+                    push(chatRef, {
+                        usuario: usuarioAtual,
+                        imagem: dataUrl, // Campo novo para imagem
+                        admin: isAdmin,
+                        timestamp: Date.now()
+                    });
+                    resetarTimer();
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // ================= RECEBIMENTO E DISPLAY =================
+        onChildAdded(chatRef, (data) => {
+            const msg = data.val();
+            // Verifica se é imagem ou texto
+            if (msg.imagem) {
+                criarElementoImagem(msg.usuario, msg.imagem, msg.admin);
+            } else {
+                criarElementoMsg(msg.usuario, msg.texto, msg.admin);
+            }
+        });
+
+        onValue(chatRef, (snapshot) => { if (!snapshot.exists()) document.getElementById('mensagens').innerHTML = ''; });
 
         function criarElementoMsg(usuario, texto, ehAdmin, ehSistemaLoc) {
             const listaMsg = document.getElementById('mensagens');
@@ -373,19 +396,32 @@
                 div.classList.add('msg', 'user');
                 div.innerHTML = `<span class="msg-header">${usuario}</span>${texto}`;
             }
+            listaMsg.appendChild(div);
+            listaMsg.scrollTop = listaMsg.scrollHeight;
+        }
+
+        function criarElementoImagem(usuario, imgBase64, ehAdmin) {
+            const listaMsg = document.getElementById('mensagens');
+            const div = document.createElement('div');
+            
+            let classe = ehAdmin ? 'admin' : 'user';
+            div.classList.add('msg', classe);
+
+            const header = ehAdmin ? `★ ${usuario} ★` : usuario;
+            
+            // Insere a tag IMG com o código Base64
+            div.innerHTML = `<span class="msg-header">${header}</span>
+                             <img src="${imgBase64}" class="chat-img">`;
 
             listaMsg.appendChild(div);
             listaMsg.scrollTop = listaMsg.scrollHeight;
         }
 
-        // ================= BOT SILVER_EYE =================
-        let tempoInativo = 0;
-        const LIMITE_INATIVIDADE = 20000;
-        const frasesBot = ["Conexão instável...", "Rastreando sinal...", "Alguém ouve.", "O olho tudo vê."];
-
+        // ================= BOT =================
+        let tempoInativo = 0; const LIMITE_INATIVIDADE = 20000;
+        const frasesBot = ["Conexão instável...", "Rastreando sinal...", "Alguém ouve...", "O olho tudo vê."];
         function resetarTimer() { tempoInativo = 0; }
-        document.addEventListener('mousemove', resetarTimer);
-        document.addEventListener('keypress', resetarTimer);
+        document.addEventListener('mousemove', resetarTimer); document.addEventListener('keypress', resetarTimer);
 
         setInterval(() => {
             if (usuarioAtual !== "") {
