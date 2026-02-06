@@ -53,8 +53,8 @@
             margin-bottom: 50px;
             text-align: center;
             position: relative;
-            z-index: 10; /* Garante que fique acima do fundo */
-            background: rgba(5, 5, 5, 0.85); /* Fundo levemente opaco para ler texto sobre as letras de fundo */
+            z-index: 10;
+            background: rgba(5, 5, 5, 0.85);
             padding: 20px;
             border: 1px solid #003300;
         }
@@ -72,18 +72,18 @@
             position: absolute;
             font-family: 'SinaisEstrangeiro', sans-serif;
             color: #00FF00;
-            font-size: 1.5rem;
-            opacity: 0; /* Começa invisível */
-            animation: typeFade 3s forwards;
+            opacity: 0.15; /* Opacidade fixa e baixa */
             white-space: nowrap;
         }
 
-        @keyframes typeFade {
-            0% { opacity: 0; transform: scale(0.9); }
-            10% { opacity: 0.15; transform: scale(1); } /* Opacidade baixa (muito fraca) */
-            80% { opacity: 0.15; }
-            100% { opacity: 0; transform: scale(1.1); }
+        /* Cursor piscando no final da palavra de fundo */
+        .cursor-blink {
+            display: inline-block;
+            width: 10px;
+            background-color: #00FF00;
+            animation: blinkCursor 0.5s infinite;
         }
+        @keyframes blinkCursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
         /* ================= TABELA VIGENÈRE ================= */
         .table-container {
@@ -118,34 +118,32 @@
         }
 
         th { background-color: #002200; color: #ADFF2F; }
-        .highlight-header { color: #FFFF00; font-weight: bold; } /* Amarelo */
+        .highlight-header { color: #FFFF00; font-weight: bold; }
 
         /* ================= ENIGMA (TEXTOS) ================= */
         .clue-box {
             margin: 40px 0;
-            border-top: 2px dashed #FFFF00; /* Amarelo */
-            border-bottom: 2px dashed #FFFF00; /* Amarelo */
+            border-top: 2px dashed #FFFF00;
+            border-bottom: 2px dashed #FFFF00;
             padding: 30px 0;
             position: relative;
         }
 
-        /* Texto 1: Fonte Estrangeira */
         .custom-font-text {
             font-family: 'SinaisEstrangeiro', sans-serif;
             font-size: 4rem;
             margin: 0 0 10px 0;
-            color: #FFFF00; /* Amarelo (antes era vermelho) */
+            color: #FFFF00;
             text-shadow: 2px 2px 0px #005500;
             animation: glitch-anim 2s infinite linear alternate-reverse;
         }
 
-        /* Texto 2: Cifra Normal */
         .cipher-text {
             font-size: 2.5rem;
             letter-spacing: 5px;
             font-weight: bold;
             margin: 0;
-            color: #FFFFFF; /* Branco para contraste com amarelo */
+            color: #FFFFFF;
             text-shadow: 0 0 10px #FFFFFF;
         }
 
@@ -160,7 +158,7 @@
 
         input {
             background: transparent;
-            border: 2px solid #FFFF00; /* Amarelo */
+            border: 2px solid #FFFF00;
             color: #FFFF00;
             font-family: 'Courier New', monospace;
             font-size: 1.5rem;
@@ -178,7 +176,7 @@
 
         button {
             background: #222200;
-            border: 1px solid #FFFF00; /* Amarelo */
+            border: 1px solid #FFFF00;
             color: #FFFF00;
             padding: 12px 30px;
             font-family: 'Courier New', monospace;
@@ -196,7 +194,7 @@
             box-shadow: 0 0 20px #FFFF00;
         }
 
-        /* ================= EFEITO GLITCH (CORRUPÇÃO) ================= */
+        /* ================= EFEITO GLITCH ================= */
         h1.glitch {
             color: #FFFF00;
             font-size: 2rem;
@@ -209,7 +207,7 @@
             content: attr(data-text);
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: #050505; /* Esconde o texto original levemente */
+            background: #050505;
         }
 
         .glitch::before {
@@ -283,39 +281,80 @@
     </div>
 
     <script>
-        // ================= FUNDO ALEATÓRIO (BACKGROUND FX) =================
+        // ================= FUNDO COM EFEITO DIGITAÇÃO (TYPEWRITER) =================
         const bgContainer = document.getElementById('bgTextContainer');
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const MAX_ELEMENTS = 15; // Limite de palavras simultâneas para não travar
+        let currentElements = 0;
 
-        function spawnBackgroundText() {
+        function spawnTypewriterText() {
+            if (currentElements >= MAX_ELEMENTS) return;
+
             const el = document.createElement('div');
-            // Gera palavra aleatória ex: AGFAJJHAGSDA
-            let text = "";
-            for(let i=0; i<12; i++) {
-                text += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            el.innerText = text;
             el.classList.add('bg-alien-word');
             
-            // Posição aleatória na tela
+            // Posição e Tamanho Aleatórios
             el.style.left = Math.random() * 90 + "%";
             el.style.top = Math.random() * 90 + "%";
-            // Tamanho aleatório para profundidade
             el.style.fontSize = (Math.random() * 2 + 1) + "rem"; 
-            
-            bgContainer.appendChild(el);
 
-            // Remove o elemento após a animação (3s) para não pesar o navegador
-            setTimeout(() => {
-                el.remove();
-            }, 3000);
+            // Gera o texto alvo
+            let targetText = "";
+            let length = Math.floor(Math.random() * 8) + 5; // Tamanho entre 5 e 12
+            for(let i=0; i<length; i++) {
+                targetText += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+
+            bgContainer.appendChild(el);
+            currentElements++;
+
+            // Inicia o ciclo de vida da palavra
+            typeWriterEffect(el, targetText);
         }
 
-        // Cria um novo texto a cada 400ms
-        setInterval(spawnBackgroundText, 400);
+        function typeWriterEffect(element, text) {
+            let i = 0;
+            let isDeleting = false;
+            
+            // Velocidade de digitação
+            let typeSpeed = 100; 
+            // Tempo de espera antes de apagar
+            let waitTime = 2000; 
+            
+            function loop() {
+                if (isDeleting) {
+                    // Apagando (Backspace)
+                    element.innerText = text.substring(0, i - 1) + "_";
+                    i--;
+                    typeSpeed = 50; // Apaga mais rápido
+                } else {
+                    // Digitando
+                    element.innerText = text.substring(0, i + 1) + "_";
+                    i++;
+                    typeSpeed = 150; // Digita normal
+                }
+
+                if (!isDeleting && i === text.length) {
+                    // Terminou de digitar, espera um pouco
+                    isDeleting = true;
+                    setTimeout(loop, waitTime);
+                } else if (isDeleting && i === 0) {
+                    // Terminou de apagar, remove elemento
+                    element.remove();
+                    currentElements--;
+                } else {
+                    // Continua o loop
+                    setTimeout(loop, typeSpeed);
+                }
+            }
+            loop();
+        }
+
+        // Tenta criar uma nova palavra a cada X ms
+        setInterval(spawnTypewriterText, 800);
 
 
-        // ================= GERAR TABELA VIGENÈRE =================
+        // ================= TABELA VIGENÈRE =================
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
         const tableDiv = document.getElementById("vigenereTable");
         
@@ -337,7 +376,7 @@
         // ================= LÓGICA DO JOGO =================
         const RESPOSTA_CORRETA = "METADADOS";
         const PROXIMA_PAGINA = "https://silvereye00.github.io/The-eye-is-the-truth/feel-the-stranger.html";
-        const IMAGEM_DOWNLOAD = "fragmento_recuperado.png"; // Nome da imagem na pasta
+        const IMAGEM_DOWNLOAD = "fragmento_recuperado.png"; 
 
         function verificarResposta() {
             const input = document.getElementById("respostaInput");
