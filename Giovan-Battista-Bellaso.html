@@ -8,7 +8,7 @@
         /* ================= FONTE CUSTOMIZADA ================= */
         @font-face {
             font-family: 'SinaisEstrangeiro';
-            /* Certifique-se que o nome do arquivo está exato */
+            /* Certifique-se que o arquivo está na mesma pasta */
             src: url('SinaisEstrangeiro-Regular (1).ttf') format('truetype');
         }
 
@@ -24,6 +24,7 @@
             align-items: center;
             overflow-x: hidden;
             text-shadow: 0 0 4px #00FF00;
+            position: relative;
         }
 
         /* Efeitos de Tela (Scanlines + Flicker) */
@@ -52,7 +53,36 @@
             margin-bottom: 50px;
             text-align: center;
             position: relative;
-            z-index: 1;
+            z-index: 10; /* Garante que fique acima do fundo */
+            background: rgba(5, 5, 5, 0.85); /* Fundo levemente opaco para ler texto sobre as letras de fundo */
+            padding: 20px;
+            border: 1px solid #003300;
+        }
+
+        /* ================= FUNDO ALEATÓRIO (BACKGROUND) ================= */
+        .bg-text-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bg-alien-word {
+            position: absolute;
+            font-family: 'SinaisEstrangeiro', sans-serif;
+            color: #00FF00;
+            font-size: 1.5rem;
+            opacity: 0; /* Começa invisível */
+            animation: typeFade 3s forwards;
+            white-space: nowrap;
+        }
+
+        @keyframes typeFade {
+            0% { opacity: 0; transform: scale(0.9); }
+            10% { opacity: 0.15; transform: scale(1); } /* Opacidade baixa (muito fraca) */
+            80% { opacity: 0.15; }
+            100% { opacity: 0; transform: scale(1.1); }
         }
 
         /* ================= TABELA VIGENÈRE ================= */
@@ -61,10 +91,16 @@
             border: 1px solid #005500;
             padding: 10px;
             margin-bottom: 40px;
-            background: rgba(0, 20, 0, 0.8);
+            background: rgba(0, 20, 0, 0.9);
             box-shadow: 0 0 15px #003300;
-            /* Leve rotação para parecer instável/corrompido */
             transform: rotate(-0.5deg); 
+            animation: gentleShake 3s infinite;
+        }
+        
+        @keyframes gentleShake {
+            0% { transform: translate(0,0) rotate(-0.5deg); }
+            50% { transform: translate(1px, 1px) rotate(-0.5deg); }
+            100% { transform: translate(0,0) rotate(-0.5deg); }
         }
 
         table {
@@ -82,13 +118,13 @@
         }
 
         th { background-color: #002200; color: #ADFF2F; }
-        .highlight-header { color: #FF0000; font-weight: bold; }
+        .highlight-header { color: #FFFF00; font-weight: bold; } /* Amarelo */
 
         /* ================= ENIGMA (TEXTOS) ================= */
         .clue-box {
             margin: 40px 0;
-            border-top: 2px dashed #00FF00;
-            border-bottom: 2px dashed #00FF00;
+            border-top: 2px dashed #FFFF00; /* Amarelo */
+            border-bottom: 2px dashed #FFFF00; /* Amarelo */
             padding: 30px 0;
             position: relative;
         }
@@ -96,10 +132,10 @@
         /* Texto 1: Fonte Estrangeira */
         .custom-font-text {
             font-family: 'SinaisEstrangeiro', sans-serif;
-            font-size: 4rem; /* Bem grande para ler os símbolos */
+            font-size: 4rem;
             margin: 0 0 10px 0;
-            color: #FF0000; /* Vermelho para destaque */
-            text-shadow: 2px 2px 0px #00FF00;
+            color: #FFFF00; /* Amarelo (antes era vermelho) */
+            text-shadow: 2px 2px 0px #005500;
             animation: glitch-anim 2s infinite linear alternate-reverse;
         }
 
@@ -109,7 +145,8 @@
             letter-spacing: 5px;
             font-weight: bold;
             margin: 0;
-            color: #FFFF00;
+            color: #FFFFFF; /* Branco para contraste com amarelo */
+            text-shadow: 0 0 10px #FFFFFF;
         }
 
         /* ================= INPUT E BOTÃO ================= */
@@ -123,8 +160,8 @@
 
         input {
             background: transparent;
-            border: 2px solid #FF0000; /* Borda vermelha indicando erro/perigo */
-            color: #00FF00;
+            border: 2px solid #FFFF00; /* Amarelo */
+            color: #FFFF00;
             font-family: 'Courier New', monospace;
             font-size: 1.5rem;
             padding: 10px;
@@ -132,35 +169,47 @@
             width: 100%;
             max-width: 400px;
             outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            box-shadow: 0 0 15px #FFFF00;
         }
 
         button {
-            background: #220000;
-            border: 1px solid #FF0000;
-            color: #FF0000;
+            background: #222200;
+            border: 1px solid #FFFF00; /* Amarelo */
+            color: #FFFF00;
             padding: 12px 30px;
             font-family: 'Courier New', monospace;
             font-size: 1.2rem;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
+            position: relative;
+            overflow: hidden;
         }
 
         button:hover {
-            background: #FF0000;
+            background: #FFFF00;
             color: black;
-            box-shadow: 0 0 20px #FF0000;
+            box-shadow: 0 0 20px #FFFF00;
         }
 
         /* ================= EFEITO GLITCH (CORRUPÇÃO) ================= */
-        .glitch {
-            position: relative;
+        h1.glitch {
+            color: #FFFF00;
+            font-size: 2rem;
+            text-transform: uppercase;
         }
+
+        .glitch { position: relative; }
         
         .glitch::before, .glitch::after {
             content: attr(data-text);
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; /* Esconde o texto original levemente */
         }
 
         .glitch::before {
@@ -187,17 +236,21 @@
         }
 
         #error-msg {
-            color: red;
+            color: #FFFF00;
             display: none;
             margin-top: 10px;
             font-weight: bold;
+            animation: blink 0.5s infinite;
         }
+
+        @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0;} 100% {opacity: 1;} }
 
         /* Responsividade */
         @media (max-width: 600px) {
             .custom-font-text { font-size: 2.5rem; }
             .cipher-text { font-size: 1.5rem; }
             td, th { padding: 2px; min-width: 10px; font-size: 0.6rem; }
+            h1.glitch { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -205,18 +258,20 @@
 
     <div class="scanlines"></div>
     <div class="flicker-overlay"></div>
+    
+    <div class="bg-text-container" id="bgTextContainer"></div>
 
     <div class="container">
-        <h1 class="glitch" data-text="/// FALHA CRÍTICA DE SISTEMA ///">/// FALHA CRÍTICA DE SISTEMA ///</h1>
-        <p style="color: #FF0000;">DADOS FRAGMENTADOS. UTILIZE A TABELA DE REFERÊNCIA.</p>
+        <h1 class="glitch" data-text="PÁGINA NÃO IDENTIFICADA">PÁGINA NÃO IDENTIFICADA</h1>
+        <p style="color: #FFFF00;">DADOS FRAGMENTADOS. UTILIZE A TABELA DE REFERÊNCIA.</p>
 
         <div class="table-container" id="vigenereTable"></div>
 
         <div class="clue-box">
-            <p style="font-size: 0.8rem; margin-bottom: 5px;">CHAVE DE DECIFRAÇÃO (CORROMPIDA):</p>
+            <p style="font-size: 0.8rem; margin-bottom: 5px; color: #00FF00;">CHAVE DE DECIFRAÇÃO (CORROMPIDA):</p>
             <div class="custom-font-text" title="DENTRO">DENTRO</div>
             
-            <p style="font-size: 0.8rem; margin-top: 20px; margin-bottom: 5px;">DADOS CRIPTOGRAFADOS:</p>
+            <p style="font-size: 0.8rem; margin-top: 20px; margin-bottom: 5px; color: #00FF00;">DADOS CRIPTOGRAFADOS:</p>
             <div class="cipher-text glitch" data-text="PIGTUOGSF">PIGTUOGSF</div>
         </div>
 
@@ -228,20 +283,49 @@
     </div>
 
     <script>
+        // ================= FUNDO ALEATÓRIO (BACKGROUND FX) =================
+        const bgContainer = document.getElementById('bgTextContainer');
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        function spawnBackgroundText() {
+            const el = document.createElement('div');
+            // Gera palavra aleatória ex: AGFAJJHAGSDA
+            let text = "";
+            for(let i=0; i<12; i++) {
+                text += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            el.innerText = text;
+            el.classList.add('bg-alien-word');
+            
+            // Posição aleatória na tela
+            el.style.left = Math.random() * 90 + "%";
+            el.style.top = Math.random() * 90 + "%";
+            // Tamanho aleatório para profundidade
+            el.style.fontSize = (Math.random() * 2 + 1) + "rem"; 
+            
+            bgContainer.appendChild(el);
+
+            // Remove o elemento após a animação (3s) para não pesar o navegador
+            setTimeout(() => {
+                el.remove();
+            }, 3000);
+        }
+
+        // Cria um novo texto a cada 400ms
+        setInterval(spawnBackgroundText, 400);
+
+
         // ================= GERAR TABELA VIGENÈRE =================
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
         const tableDiv = document.getElementById("vigenereTable");
         
         let tableHTML = "<table><thead><tr><th></th>";
-        // Cabeçalho
         alphabet.forEach(letter => tableHTML += `<th class='highlight-header'>${letter}</th>`);
         tableHTML += "</tr></thead><tbody>";
 
-        // Linhas
         for (let i = 0; i < alphabet.length; i++) {
             tableHTML += `<tr><th class='highlight-header'>${alphabet[i]}</th>`;
             for (let j = 0; j < alphabet.length; j++) {
-                // Lógica de deslocamento Vigenère
                 const charIndex = (i + j) % 26;
                 tableHTML += `<td>${alphabet[charIndex]}</td>`;
             }
@@ -252,32 +336,24 @@
 
         // ================= LÓGICA DO JOGO =================
         const RESPOSTA_CORRETA = "METADADOS";
-        // LINK PARA ONDE VAI REDIRECIONAR
         const PROXIMA_PAGINA = "https://silvereye00.github.io/The-eye-is-the-truth/feel-the-stranger.html";
-        
-        // NOME DO ARQUIVO DE IMAGEM PARA BAIXAR
-        // ! IMPORTANTE ! : Coloque o nome da imagem que você quer que baixe aqui:
-        const IMAGEM_DOWNLOAD = "fragmento_recuperado.png"; 
+        const IMAGEM_DOWNLOAD = "fragmento_recuperado.png"; // Nome da imagem na pasta
 
         function verificarResposta() {
             const input = document.getElementById("respostaInput");
             const errorMsg = document.getElementById("error-msg");
             
             if (input.value.trim().toUpperCase() === RESPOSTA_CORRETA) {
-                // Sucesso
                 errorMsg.style.display = "none";
                 input.style.borderColor = "#00FF00";
                 
-                // 1. Iniciar Download
                 baixarArquivo();
 
-                // 2. Redirecionar após breve delay
                 setTimeout(() => {
                     window.location.href = PROXIMA_PAGINA;
-                }, 2000); // Espera 2 segundos para dar tempo do download iniciar visualmente
+                }, 2000);
                 
             } else {
-                // Erro
                 errorMsg.style.display = "block";
                 input.value = "";
                 input.classList.add("glitch");
@@ -286,16 +362,14 @@
         }
 
         function baixarArquivo() {
-            // Cria um link falso invisível e clica nele
             const a = document.createElement('a');
-            a.href = IMAGEM_DOWNLOAD; // Caminho da imagem
-            a.download = "EVIDENCIA_S1.png"; // Nome que vai aparecer pro usuário ao baixar
+            a.href = IMAGEM_DOWNLOAD;
+            a.download = "EVIDENCIA_S1.png";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
         }
 
-        // Enter para enviar
         document.getElementById("respostaInput").addEventListener("keypress", function(e) {
             if (e.key === "Enter") verificarResposta();
         });
