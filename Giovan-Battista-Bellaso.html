@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>/// DADOS CORROMPIDOS ///</title>
+    <style>
+        /* ================= FONTE CUSTOMIZADA ================= */
+        @font-face {
+            font-family: 'SinaisEstrangeiro';
+            /* Certifique-se que o nome do arquivo está exato */
+            src: url('SinaisEstrangeiro-Regular (1).ttf') format('truetype');
+        }
+
+        /* ================= ESTILO GERAL ================= */
+        body {
+            background-color: #050505;
+            color: #00FF00;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            text-shadow: 0 0 4px #00FF00;
+        }
+
+        /* Efeitos de Tela (Scanlines + Flicker) */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%);
+            background-size: 100% 4px;
+            pointer-events: none; z-index: 999;
+        }
+        .flicker-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 255, 0, 0.02);
+            pointer-events: none; z-index: 998;
+            animation: flicker 0.1s infinite;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.02; } 20% { opacity: 0.1; } 40% { opacity: 0.02; } 100% { opacity: 0.02; }
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin-top: 30px;
+            margin-bottom: 50px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ================= TABELA VIGENÈRE ================= */
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #005500;
+            padding: 10px;
+            margin-bottom: 40px;
+            background: rgba(0, 20, 0, 0.8);
+            box-shadow: 0 0 15px #003300;
+            /* Leve rotação para parecer instável/corrompido */
+            transform: rotate(-0.5deg); 
+        }
+
+        table {
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin: 0 auto;
+            color: #00FF00;
+        }
+
+        td, th {
+            padding: 4px;
+            border: 1px solid #004400;
+            text-align: center;
+            min-width: 15px;
+        }
+
+        th { background-color: #002200; color: #ADFF2F; }
+        .highlight-header { color: #FF0000; font-weight: bold; }
+
+        /* ================= ENIGMA (TEXTOS) ================= */
+        .clue-box {
+            margin: 40px 0;
+            border-top: 2px dashed #00FF00;
+            border-bottom: 2px dashed #00FF00;
+            padding: 30px 0;
+            position: relative;
+        }
+
+        /* Texto 1: Fonte Estrangeira */
+        .custom-font-text {
+            font-family: 'SinaisEstrangeiro', sans-serif;
+            font-size: 4rem; /* Bem grande para ler os símbolos */
+            margin: 0 0 10px 0;
+            color: #FF0000; /* Vermelho para destaque */
+            text-shadow: 2px 2px 0px #00FF00;
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+
+        /* Texto 2: Cifra Normal */
+        .cipher-text {
+            font-size: 2.5rem;
+            letter-spacing: 5px;
+            font-weight: bold;
+            margin: 0;
+            color: #FFFF00;
+        }
+
+        /* ================= INPUT E BOTÃO ================= */
+        .input-area {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input {
+            background: transparent;
+            border: 2px solid #FF0000; /* Borda vermelha indicando erro/perigo */
+            color: #00FF00;
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            padding: 10px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            outline: none;
+        }
+
+        button {
+            background: #220000;
+            border: 1px solid #FF0000;
+            color: #FF0000;
+            padding: 12px 30px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #FF0000;
+            color: black;
+            box-shadow: 0 0 20px #FF0000;
+        }
+
+        /* ================= EFEITO GLITCH (CORRUPÇÃO) ================= */
+        .glitch {
+            position: relative;
+        }
+        
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 #ff00c1;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 #00fff9;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(16px, 9999px, 9px, 0); transform: skew(0.85deg); }
+            100% { clip: rect(68px, 9999px, 86px, 0); transform: skew(0.2deg); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(69px, 9999px, 8px, 0); transform: skew(0.1deg); }
+            100% { clip: rect(2px, 9999px, 86px, 0); transform: skew(0.65deg); }
+        }
+
+        #error-msg {
+            color: red;
+            display: none;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        /* Responsividade */
+        @media (max-width: 600px) {
+            .custom-font-text { font-size: 2.5rem; }
+            .cipher-text { font-size: 1.5rem; }
+            td, th { padding: 2px; min-width: 10px; font-size: 0.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanlines"></div>
+    <div class="flicker-overlay"></div>
+
+    <div class="container">
+        <h1 class="glitch" data-text="/// FALHA CRÍTICA DE SISTEMA ///">/// FALHA CRÍTICA DE SISTEMA ///</h1>
+        <p style="color: #FF0000;">DADOS FRAGMENTADOS. UTILIZE A TABELA DE REFERÊNCIA.</p>
+
+        <div class="table-container" id="vigenereTable"></div>
+
+        <div class="clue-box">
+            <p style="font-size: 0.8rem; margin-bottom: 5px;">CHAVE DE DECIFRAÇÃO (CORROMPIDA):</p>
+            <div class="custom-font-text" title="DENTRO">DENTRO</div>
+            
+            <p style="font-size: 0.8rem; margin-top: 20px; margin-bottom: 5px;">DADOS CRIPTOGRAFADOS:</p>
+            <div class="cipher-text glitch" data-text="PIGTUOGSF">PIGTUOGSF</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="respostaInput" placeholder="INSERIR DADOS TRADUZIDOS..." autocomplete="off">
+            <button onclick="verificarResposta()">RESTAURAR ARQUIVO</button>
+            <div id="error-msg">ACESSO NEGADO. DADOS INCORRETOS.</div>
+        </div>
+    </div>
+
+    <script>
+        // ================= GERAR TABELA VIGENÈRE =================
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+        const tableDiv = document.getElementById("vigenereTable");
+        
+        let tableHTML = "<table><thead><tr><th></th>";
+        // Cabeçalho
+        alphabet.forEach(letter => tableHTML += `<th class='highlight-header'>${letter}</th>`);
+        tableHTML += "</tr></thead><tbody>";
+
+        // Linhas
+        for (let i = 0; i < alphabet.length; i++) {
+            tableHTML += `<tr><th class='highlight-header'>${alphabet[i]}</th>`;
+            for (let j = 0; j < alphabet.length; j++) {
+                // Lógica de deslocamento Vigenère
+                const charIndex = (i + j) % 26;
+                tableHTML += `<td>${alphabet[charIndex]}</td>`;
+            }
+            tableHTML += "</tr>";
+        }
+        tableHTML += "</tbody></table>";
+        tableDiv.innerHTML = tableHTML;
+
+        // ================= LÓGICA DO JOGO =================
+        const RESPOSTA_CORRETA = "METADADOS";
+        // LINK PARA ONDE VAI REDIRECIONAR
+        const PROXIMA_PAGINA = "https://silvereye00.github.io/The-eye-is-the-truth/feel-the-stranger.html";
+        
+        // NOME DO ARQUIVO DE IMAGEM PARA BAIXAR
+        // ! IMPORTANTE ! : Coloque o nome da imagem que você quer que baixe aqui:
+        const IMAGEM_DOWNLOAD = "fragmento_recuperado.png"; 
+
+        function verificarResposta() {
+            const input = document.getElementById("respostaInput");
+            const errorMsg = document.getElementById("error-msg");
+            
+            if (input.value.trim().toUpperCase() === RESPOSTA_CORRETA) {
+                // Sucesso
+                errorMsg.style.display = "none";
+                input.style.borderColor = "#00FF00";
+                
+                // 1. Iniciar Download
+                baixarArquivo();
+
+                // 2. Redirecionar após breve delay
+                setTimeout(() => {
+                    window.location.href = PROXIMA_PAGINA;
+                }, 2000); // Espera 2 segundos para dar tempo do download iniciar visualmente
+                
+            } else {
+                // Erro
+                errorMsg.style.display = "block";
+                input.value = "";
+                input.classList.add("glitch");
+                setTimeout(() => input.classList.remove("glitch"), 500);
+            }
+        }
+
+        function baixarArquivo() {
+            // Cria um link falso invisível e clica nele
+            const a = document.createElement('a');
+            a.href = IMAGEM_DOWNLOAD; // Caminho da imagem
+            a.download = "EVIDENCIA_S1.png"; // Nome que vai aparecer pro usuário ao baixar
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Enter para enviar
+        document.getElementById("respostaInput").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") verificarResposta();
+        });
+    </script>
+</body>
+</html>
