@@ -31,6 +31,29 @@
 
         @keyframes flicker { 0% { opacity: 0.02; } 50% { opacity: 0.05; } 100% { opacity: 0.02; } }
 
+        /* ================= ANIMAÇÕES DE TERMINAL (ABRIR/FECHAR) ================= */
+        .anim-open {
+            animation: terminalOpen 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            transform-origin: center;
+        }
+
+        .anim-close {
+            animation: terminalClose 0.4s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+            transform-origin: center;
+        }
+
+        @keyframes terminalOpen {
+            0% { transform: scaleX(0.005) scaleY(0); opacity: 0.7; }
+            50% { transform: scaleX(1) scaleY(0.005); opacity: 1; }
+            100% { transform: scaleX(1) scaleY(1); opacity: 1; }
+        }
+
+        @keyframes terminalClose {
+            0% { transform: scaleX(1) scaleY(1); opacity: 1; }
+            50% { transform: scaleX(1) scaleY(0.005); opacity: 1; }
+            100% { transform: scaleX(0.005) scaleY(0); opacity: 0; }
+        }
+
         /* ================= TELA DE CARREGAMENTO ================= */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -50,19 +73,68 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-        /* ================= TELA DE BANIMENTO ================= */
+        /* ================= TELA DE BANIMENTO (GLITCH EXTREMO) ================= */
         #banned-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #050000; z-index: 3000;
-            display: none;
+            display: none; /* Controlado via JS */
             flex-direction: column; justify-content: center; align-items: center;
             text-align: center; color: #FF0000;
-            text-shadow: 0 0 10px #FF0000;
+            text-shadow: 2px 0 #00FF00, -2px 0 #0000FF; /* RGB Split base */
         }
 
-        .banned-icon { font-size: 4rem; margin-bottom: 20px; border: 4px solid #FF0000; padding: 20px; border-radius: 10px; }
-        .banned-title { font-size: 2.5rem; font-weight: bold; letter-spacing: 5px; margin-bottom: 10px; }
-        .banned-desc { font-size: 1rem; max-width: 80%; }
+        /* Container do conteúdo banido para aplicar animação de entrada */
+        .banned-content {
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .banned-icon { 
+            font-size: 5rem; margin-bottom: 20px; 
+            border: 4px solid #FF0000; padding: 30px; border-radius: 10px; 
+            position: relative;
+        }
+
+        .banned-title { font-size: 3rem; font-weight: bold; letter-spacing: 5px; margin-bottom: 10px; text-transform: uppercase; }
+        .banned-desc { font-size: 1.2rem; max-width: 80%; font-weight: bold; }
+
+        /* Efeito de Glitch Caótico */
+        .chaos-glitch {
+            animation: chaos 0.3s infinite;
+            position: relative;
+        }
+
+        .chaos-glitch::before, .chaos-glitch::after {
+            content: attr(data-text);
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            background: #050000; overflow: hidden;
+        }
+
+        .chaos-glitch::before {
+            left: 2px; text-shadow: -1px 0 #00ff00; clip: rect(24px, 550px, 90px, 0);
+            animation: chaos-anim-2 2s infinite linear alternate-reverse;
+        }
+        .chaos-glitch::after {
+            left: -2px; text-shadow: -1px 0 #0000ff; clip: rect(85px, 550px, 140px, 0);
+            animation: chaos-anim-1 2s infinite linear alternate-reverse;
+        }
+
+        @keyframes chaos {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes chaos-anim-1 {
+            0% { clip: rect(20px, 9999px, 10px, 0); }
+            100% { clip: rect(80px, 9999px, 100px, 0); }
+        }
+        @keyframes chaos-anim-2 {
+            0% { clip: rect(100px, 9999px, 120px, 0); }
+            100% { clip: rect(10px, 9999px, 50px, 0); }
+        }
 
         /* ================= LOGIN ================= */
         #login-overlay {
@@ -72,9 +144,12 @@
             flex-direction: column; z-index: 1000; padding: 20px; box-sizing: border-box;
         }
 
+        /* O box do login que será animado */
         .login-box {
             text-align: center; border: 2px solid #00FF00; padding: 40px;
             background: #001100; width: 100%; max-width: 400px;
+            transform: scaleX(0.005) scaleY(0); /* Estado inicial fechado */
+            opacity: 0;
         }
 
         .login-input {
@@ -103,8 +178,11 @@
 
         /* ================= CHAT ================= */
         .chat-container {
-            width: 100%; height: 100%; display: flex; flex-direction: column;
+            width: 100%; height: 100%; display: none; /* Inicialmente invisível, controlado pelo JS */
+            flex-direction: column;
             background-color: rgba(0, 20, 0, 0.9); position: relative; z-index: 1;
+            /* Começa "fechado" para animar ao abrir */
+            transform-origin: center;
         }
 
         #mensagens {
@@ -175,16 +253,18 @@
     </div>
 
     <div id="banned-screen">
-        <div class="banned-icon">☠</div>
-        <div class="banned-title">ACESSO NEGADO</div>
-        <div class="banned-desc">
-            SEU ID DIGITAL FOI COLOCADO NA LISTA NEGRA.<br>
-            A CONEXÃO COM O TERMINAL FOI ENCERRADA PERMANENTEMENTE.
+        <div class="banned-content anim-open">
+            <div class="banned-icon chaos-glitch" data-text="☠">☠</div>
+            <div class="banned-title chaos-glitch" data-text="ACESSO NEGADO">ACESSO NEGADO</div>
+            <div class="banned-desc">
+                SEU ID DIGITAL FOI ELIMINADO.<br>
+                CONEXÃO PERMANENTEMENTE ENCERRADA.
+            </div>
         </div>
     </div>
 
     <div id="login-overlay">
-        <div class="login-box">
+        <div class="login-box" id="loginBoxElement">
             <h2 style="margin-top: 0;">IDENTIFICAÇÃO</h2>
             <input type="text" id="usernameInput" class="login-input" placeholder="CODINOME" autocomplete="off">
             <input type="password" id="passwordInput" class="login-input" placeholder="SENHA" autocomplete="off">
@@ -193,7 +273,7 @@
         </div>
     </div>
 
-    <div class="chat-container">
+    <div class="chat-container" id="chatContainerElement">
         <header>
             <div class="online-counter">
                 <span class="eye-icon">👁</span>
@@ -243,52 +323,101 @@
         let isAdmin = false;
         let isInitialLoad = true;
 
+        // ================= FUNÇÕES DE ANIMAÇÃO =================
+        
+        function abrirLogin() {
+            const loginOverlay = document.getElementById('login-overlay');
+            const loginBox = document.getElementById('loginBoxElement');
+            loginOverlay.style.display = 'flex';
+            
+            // Remove classes antigas e adiciona a de abrir
+            loginBox.classList.remove('anim-close');
+            loginBox.classList.add('anim-open');
+        }
+
+        function fecharLoginEAbrirChat() {
+            const loginBox = document.getElementById('loginBoxElement');
+            const loginOverlay = document.getElementById('login-overlay');
+            const chatContainer = document.getElementById('chatContainerElement');
+
+            // 1. Anima fechamento do Login
+            loginBox.classList.remove('anim-open');
+            loginBox.classList.add('anim-close');
+
+            // 2. Espera animação (400ms) terminar
+            setTimeout(() => {
+                loginOverlay.style.display = 'none';
+                
+                // 3. Abre Chat
+                chatContainer.style.display = 'flex';
+                chatContainer.classList.remove('anim-close');
+                chatContainer.classList.add('anim-open');
+                
+                // Scroll para o fim
+                const listaMsg = document.getElementById('mensagens');
+                listaMsg.scrollTop = listaMsg.scrollHeight;
+                
+            }, 400);
+        }
+
+        function fecharChatEBanir() {
+            const chatContainer = document.getElementById('chatContainerElement');
+            
+            // 1. Anima fechamento do Chat
+            if (chatContainer.style.display === 'flex') {
+                chatContainer.classList.remove('anim-open');
+                chatContainer.classList.add('anim-close');
+                
+                setTimeout(() => {
+                    chatContainer.style.display = 'none';
+                    mostrarTelaBan();
+                }, 400);
+            } else {
+                // Se o chat nem estava aberto (ex: banido no login)
+                document.getElementById('login-overlay').style.display = 'none';
+                mostrarTelaBan();
+            }
+        }
+
+        function mostrarTelaBan() {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('banned-screen').style.display = 'flex';
+        }
+
         // ================= FUNÇÕES DE BANIMENTO =================
         function aplicarBanimento() {
             localStorage.setItem("terminal_banned", "true");
-            // Salva o nome de quem foi banido para saber quem verificar depois
-            if (usuarioAtual) {
-                localStorage.setItem("banned_username", usuarioAtual);
-            }
+            if (usuarioAtual) localStorage.setItem("banned_username", usuarioAtual);
             
-            // UI
-            document.getElementById('loading-screen').style.display = 'none';
-            document.getElementById('login-overlay').style.display = 'none';
-            document.querySelector('.chat-container').style.display = 'none';
-            document.getElementById('banned-screen').style.display = 'flex';
+            // Dispara a sequência de animação de banimento
+            fecharChatEBanir();
         }
 
         function removerBanimentoLocal() {
             localStorage.removeItem("terminal_banned");
             localStorage.removeItem("banned_username");
-            location.reload(); // Recarrega a página para limpar o estado
+            location.reload(); 
         }
 
-        // Verifica se já está banido ao carregar
+        // Verifica inicial (Sem animação, direto pro ban se já marcado)
         if (localStorage.getItem("terminal_banned") === "true") {
-            aplicarBanimento();
+            document.getElementById('loading-screen').style.display = 'none';
+            mostrarTelaBan();
         }
 
         // ================= VIGILÂNCIA DE BANIMENTO (REALTIME) =================
-        // Este listener fica ativo mesmo se o usuário estiver banido, esperando o perdão.
         onValue(blacklistRef, (snapshot) => {
             const banList = snapshot.val() || {};
-            
-            // Precisamos saber quem verificar. Se o usuário recarregou a página banido,
-            // 'usuarioAtual' está vazio, então pegamos do localStorage.
             const userToCheck = usuarioAtual || localStorage.getItem("banned_username");
-            
             if (!userToCheck) return; 
 
             const userKey = userToCheck.toUpperCase().replace(/[.#$[\]]/g, "_");
 
-            // CENÁRIO 1: Usuário está na lista negra
             if (banList[userKey] === true) {
                 if (localStorage.getItem("terminal_banned") !== "true") {
                     aplicarBanimento();
                 }
             } 
-            // CENÁRIO 2: Usuário NÃO está mais na lista, mas ainda está marcado no navegador (UNBAN)
             else if (localStorage.getItem("terminal_banned") === "true") {
                 removerBanimentoLocal();
             }
@@ -299,20 +428,18 @@
             if (isInitialLoad) {
                 document.getElementById('loading-screen').style.display = 'none';
                 
-                // Só mostra login se NÃO estiver banido e NÃO estiver logado
                 if (!usuarioAtual && localStorage.getItem("terminal_banned") !== "true") {
-                    document.getElementById('login-overlay').style.display = 'flex';
+                    abrirLogin(); // Usa a função de animação
                 }
                 isInitialLoad = false;
             }
         });
 
-        // Fallback de segurança
         setTimeout(() => {
             if (isInitialLoad) {
                 document.getElementById('loading-screen').style.display = 'none';
                 if (!usuarioAtual && localStorage.getItem("terminal_banned") !== "true") {
-                    document.getElementById('login-overlay').style.display = 'flex';
+                    abrirLogin();
                 }
                 isInitialLoad = false;
             }
@@ -343,14 +470,19 @@
             const user = userInput.value.trim().replace(/[.#$[\]]/g, "_");
             const pass = passInput.value.trim();
 
+            // CHEAT CODE DESBAN
+            if (user === "RESET" && pass === "admin123") {
+                localStorage.clear(); 
+                set(ref(db, 'blacklist'), null);
+                alert("SISTEMA RESETADO."); location.reload(); return;
+            }
+
             if (!user || !pass) { statusDiv.innerText = "DADOS INCOMPLETOS."; return; }
             
-            // Verifica Banimento no servidor antes de deixar entrar
             try {
                 const userKey = user.toUpperCase().replace(/[.#$[\]]/g, "_");
                 const banCheck = await get(child(dbRef, `blacklist/${userKey}`));
                 if (banCheck.exists() && banCheck.val() === true) {
-                    // Salva o nome para o banimento funcionar corretamente
                     usuarioAtual = user; 
                     aplicarBanimento();
                     return;
@@ -379,7 +511,8 @@
 
         function autorizarAcesso(nome, adminFlag) {
             usuarioAtual = nome; isAdmin = adminFlag;
-            document.getElementById('login-overlay').style.display = 'none';
+            // Substitui o display 'none' direto pela função de animação
+            fecharLoginEAbrirChat();
             iniciarSistemaPresenca();
         }
 
@@ -391,48 +524,27 @@
             const texto = input.value.trim();
             if (texto === "") return;
             
-            // --- COMANDOS DE ADMIN ---
             if (isAdmin) {
-                if (texto === "/clear") {
-                    set(chatRef, null); 
-                    input.value = ""; return;
-                }
-                
+                if (texto === "/clear") { set(chatRef, null); input.value = ""; return; }
                 if (texto.startsWith("/block ")) {
                     const targetUser = texto.split(" ")[1];
                     if (targetUser) {
                         const targetKey = targetUser.toUpperCase().replace(/[.#$[\]]/g, "_");
                         set(ref(db, 'blacklist/' + targetKey), true);
-                        
-                        push(chatRef, { 
-                            usuario: "SYSTEM", 
-                            tipo: 'texto', 
-                            texto: `ALVO ${targetUser} ELIMINADO DO SISTEMA.`, 
-                            admin: true, 
-                            timestamp: Date.now() 
-                        });
+                        push(chatRef, { usuario: "SYSTEM", tipo: 'texto', texto: `ALVO ${targetUser} ELIMINADO.`, admin: true, timestamp: Date.now() });
                     }
                     input.value = ""; return;
                 }
-
                 if (texto.startsWith("/unban ")) {
                     const targetUser = texto.split(" ")[1];
                     if (targetUser) {
                         const targetKey = targetUser.toUpperCase().replace(/[.#$[\]]/g, "_");
                         remove(ref(db, 'blacklist/' + targetKey));
-                        // Feedback visual para o admin
-                        push(chatRef, { 
-                            usuario: "SYSTEM", 
-                            tipo: 'texto', 
-                            texto: `ALVO ${targetUser} RESTAURADO AO SISTEMA.`, 
-                            admin: true, 
-                            timestamp: Date.now() 
-                        });
+                        push(chatRef, { usuario: "SYSTEM", tipo: 'texto', texto: `ALVO ${targetUser} RESTAURADO.`, admin: true, timestamp: Date.now() });
                     }
                     input.value = ""; return;
                 }
             }
-            // ---------------------------
 
             if (texto.toLowerCase() === "eu procuro a verdade") {
                  push(chatRef, { usuario: usuarioAtual, tipo: 'texto', texto: texto, admin: isAdmin, timestamp: Date.now() });
@@ -448,11 +560,10 @@
             if (e.key === "Enter") enviarMensagem(); 
         });
 
-        // ================= ARQUIVOS (BASE64) =================
+        // ================= ARQUIVOS =================
         document.getElementById('fileInput').addEventListener('change', function(e) {
             if (this.files && this.files[0]) processarArquivo(this.files[0]);
         });
-        
         document.getElementById('msgInput').addEventListener('paste', function(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let index in items) {
@@ -463,12 +574,8 @@
 
         function processarArquivo(file) {
             const LIMITE_MB = 7;
-            if (file.size > LIMITE_MB * 1024 * 1024) {
-                alert(`ARQUIVO MUITO PESADO!\nLimite: ${LIMITE_MB}MB.`); return;
-            }
-
+            if (file.size > LIMITE_MB * 1024 * 1024) { alert(`ARQUIVO MUITO PESADO! LIMITE: ${LIMITE_MB}MB.`); return; }
             const reader = new FileReader();
-
             if (file.type.startsWith('image/')) {
                 reader.onload = function(event) {
                     const img = new Image();
@@ -480,7 +587,6 @@
                         if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                         canvas.width = width; canvas.height = height;
                         ctx.drawImage(img, 0, 0, width, height);
-                        
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                         push(chatRef, { usuario: usuarioAtual, tipo: 'imagem', conteudo: dataUrl, admin: isAdmin, timestamp: Date.now() });
                         resetarTimer();
@@ -516,32 +622,23 @@
         // ================= DISPLAY =================
         onChildAdded(chatRef, (data) => {
             const msg = data.val();
-            if (msg.imagem) { 
-                criarElementoMidia(msg.usuario, 'imagem', msg.imagem, msg.admin);
-            } else if (msg.tipo === 'imagem' || msg.tipo === 'audio') {
-                criarElementoMidia(msg.usuario, msg.tipo, msg.conteudo, msg.admin);
-            } else {
-                criarElementoMsg(msg.usuario, msg.texto, msg.admin);
-            }
+            if (msg.imagem) { criarElementoMidia(msg.usuario, 'imagem', msg.imagem, msg.admin); } 
+            else if (msg.tipo === 'imagem' || msg.tipo === 'audio') { criarElementoMidia(msg.usuario, msg.tipo, msg.conteudo, msg.admin); } 
+            else { criarElementoMsg(msg.usuario, msg.texto, msg.admin); }
         });
 
         onValue(chatRef, (snapshot) => { 
-            if (!snapshot.exists() && !isInitialLoad) {
-                document.getElementById('mensagens').innerHTML = ''; 
-            }
+            if (!snapshot.exists() && !isInitialLoad) { document.getElementById('mensagens').innerHTML = ''; }
         });
 
         function criarElementoMsg(usuario, texto, ehAdmin) {
             const listaMsg = document.getElementById('mensagens');
             const div = document.createElement('div');
-            
             let classe = 'user';
             if (usuario === "EYE_BOT" || usuario === "SILVER_EYE") classe = 'bot';
             else if (ehAdmin) classe = 'admin';
-
             div.classList.add('msg', classe);
             const displayUser = (ehAdmin && classe !== 'bot') ? `★ ${usuario} ★` : usuario;
-            
             div.innerHTML = `<span class="msg-header">${displayUser}</span>${texto}`;
             listaMsg.appendChild(div);
             listaMsg.scrollTop = listaMsg.scrollHeight;
@@ -550,31 +647,16 @@
         function criarElementoMidia(usuario, tipo, conteudo, ehAdmin) {
             const listaMsg = document.getElementById('mensagens');
             const div = document.createElement('div');
-            
-            let classe = 'user';
+            let classe = ehAdmin ? 'admin' : 'user';
             if (usuario === "EYE_BOT") classe = 'bot';
-            else if (ehAdmin) classe = 'admin';
-            
             div.classList.add('msg', classe);
-
             const displayUser = (ehAdmin && classe !== 'bot') ? `★ ${usuario} ★` : usuario;
-            
             let htmlMidia = "";
             let nomeDownload = `arquivo_${Date.now()}`;
-
-            if (tipo === 'imagem') {
-                htmlMidia = `<img src="${conteudo}" class="chat-img">`;
-                nomeDownload += ".jpg";
-            } else if (tipo === 'audio') {
-                htmlMidia = `<audio controls src="${conteudo}"></audio>`;
-                nomeDownload += ".mp3";
-            }
-
+            if (tipo === 'imagem') { htmlMidia = `<img src="${conteudo}" class="chat-img">`; nomeDownload += ".jpg"; } 
+            else if (tipo === 'audio') { htmlMidia = `<audio controls src="${conteudo}"></audio>`; nomeDownload += ".mp3"; }
             const linkDown = `<a href="${conteudo}" download="${nomeDownload}" class="download-link">[BAIXAR]</a>`;
-
-            div.innerHTML = `<span class="msg-header"><span>${displayUser}</span>${linkDown}</span>
-                             <div class="chat-media-container">${htmlMidia}</div>`;
-
+            div.innerHTML = `<span class="msg-header"><span>${displayUser}</span>${linkDown}</span><div class="chat-media-container">${htmlMidia}</div>`;
             listaMsg.appendChild(div);
             listaMsg.scrollTop = listaMsg.scrollHeight;
         }
@@ -582,7 +664,6 @@
         // ================= BOT =================
         let tempoInativo = 0; const LIMITE_INATIVIDADE = 300000;
         const frasesBot = ["Conexão instável...", "Rastreando sinal...", "Alguém ouve...", "O olho tudo vê."];
-        
         function resetarTimer() { tempoInativo = 0; }
         document.addEventListener('mousemove', resetarTimer); 
         document.addEventListener('keypress', resetarTimer);
