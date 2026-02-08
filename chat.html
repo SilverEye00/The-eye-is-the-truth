@@ -31,7 +31,7 @@
 
         @keyframes flicker { 0% { opacity: 0.02; } 50% { opacity: 0.05; } 100% { opacity: 0.02; } }
 
-        /* ================= TELA DE CARREGAMENTO (LOADING) ================= */
+        /* ================= LOADING SCREEN ================= */
         #loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: black; z-index: 2000;
@@ -46,17 +46,14 @@
             box-shadow: 0 0 15px #00FF00;
         }
 
-        .loading-text {
-            font-size: 1.2rem; animation: pulse 1s infinite; letter-spacing: 2px;
-        }
-
+        .loading-text { font-size: 1.2rem; animation: pulse 1s infinite; letter-spacing: 2px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
         /* ================= LOGIN ================= */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: black; display: none; /* Começa oculto, o JS mostra */
+            background-color: black; display: none;
             justify-content: center; align-items: center;
             flex-direction: column; z-index: 1000; padding: 20px; box-sizing: border-box;
         }
@@ -75,6 +72,7 @@
         
         .status-msg { font-size: 1rem; color: #FFFF00; margin-top: 15px; min-height: 1.2em; }
 
+        /* ================= HEADER ================= */
         header {
             padding: 10px; border-bottom: 2px solid #00FF00; text-align: center;
             background: #001100; flex-shrink: 0; overflow: hidden; position: relative;
@@ -89,7 +87,7 @@
         .eye-icon { display: inline-block; font-size: 1.2rem; animation: pulseEye 2s infinite; }
         @keyframes pulseEye { 0% { opacity: 0.5; text-shadow: 0 0 0 #00FF00; } 50% { opacity: 1; text-shadow: 0 0 10px #00FF00; } 100% { opacity: 0.5; text-shadow: 0 0 0 #00FF00; } }
 
-        /* ================= CHAT AREA ================= */
+        /* ================= CHAT ================= */
         .chat-container {
             width: 100%; height: 100%; display: flex; flex-direction: column;
             background-color: rgba(0, 20, 0, 0.9); position: relative; z-index: 1;
@@ -140,7 +138,6 @@
             display: flex; align-items: center; justify-content: center;
         }
         
-        /* Mobile */
         pre.ascii-art { font-size: 14px; line-height: 14px; overflow: hidden; font-weight: bold; display: inline-block; }
         @media (max-width: 768px) {
             pre.ascii-art { font-size: 5px; line-height: 5px; }
@@ -159,7 +156,7 @@
     <div id="loading-screen">
         <div class="loader"></div>
         <div class="loading-text">INICIANDO UPLINK...<br>BAIXANDO PACOTE DE DADOS...</div>
-        <div style="margin-top: 10px; font-size: 0.8rem; color: #005500;">ISSO PODE LEVAR ALGUNS SEGUNDOS</div>
+        <div style="margin-top: 10px; font-size: 0.8rem; color: #005500;">AGUARDE...</div>
     </div>
 
     <div id="login-overlay">
@@ -219,32 +216,26 @@
         
         let usuarioAtual = "";
         let isAdmin = false;
-        let isInitialLoad = true; // Flag para controlar o carregamento inicial
+        let isInitialLoad = true;
 
-        // ================= DETECTAR CARREGAMENTO DO CHAT =================
-        // O evento 'value' dispara uma vez com TODOS os dados.
-        // Usamos isso para saber quando o histórico terminou de baixar.
+        // ================= LOADING LOGIC =================
         onValue(chatRef, (snapshot) => {
             if (isInitialLoad) {
-                // Esconde o Loading e mostra o Login (se não estiver logado)
                 document.getElementById('loading-screen').style.display = 'none';
-                if (!usuarioAtual) {
-                    document.getElementById('login-overlay').style.display = 'flex';
-                }
+                if (!usuarioAtual) document.getElementById('login-overlay').style.display = 'flex';
                 isInitialLoad = false;
             }
         });
 
-        // Se o banco estiver vazio, o onValue pode ser rápido, mas por garantia:
         setTimeout(() => {
             if (isInitialLoad) {
                 document.getElementById('loading-screen').style.display = 'none';
                 document.getElementById('login-overlay').style.display = 'flex';
                 isInitialLoad = false;
             }
-        }, 10000); // Força abertura após 10s se travar a conexão
+        }, 10000);
 
-        // ================= SISTEMA DE PRESENÇA =================
+        // ================= PRESENÇA =================
         const connectedRef = ref(db, ".info/connected");
         const onlineUsersRef = ref(db, "online_users");
         
@@ -272,6 +263,7 @@
             if (!user || !pass) { statusDiv.innerText = "DADOS INCOMPLETOS."; return; }
             statusDiv.innerText = "VERIFICANDO...";
 
+            // ADMIN CHECK (Hardcoded)
             if (user === "S1lv3rEy3" && pass === "_eye_") {
                 autorizarAcesso(user, true); return;
             } else if (user === "S1lv3rEy3") {
@@ -298,47 +290,39 @@
 
         document.getElementById('passwordInput').addEventListener("keypress", (e) => { if (e.key === "Enter") fazerLogin(); });
 
-        // ================= ENVIO DE MENSAGENS =================
+        // ================= CHAT LOGIC =================
         window.enviarMensagem = function() {
             const input = document.getElementById('msgInput');
             const texto = input.value.trim();
             if (texto === "") return;
             
-            if (texto === "/clear" && isAdmin) {
-                set(chatRef, null); input.value = ""; return;
+            // CORREÇÃO: COMANDO /clear funcionando para Admin
+            if (texto === "/clear") {
+                if (isAdmin) {
+                    set(chatRef, null); 
+                } else {
+                    alert("ACESSO NEGADO.");
+                }
+                input.value = ""; 
+                return;
             }
 
             if (texto.toLowerCase() === "eu procuro a verdade") {
                  push(chatRef, { usuario: usuarioAtual, tipo: 'texto', texto: texto, admin: isAdmin, timestamp: Date.now() });
-                 enviarImagemBot(); // Chama o bot
-                 input.value = ""; return;
+                 enviarImagemBot();
+                 input.value = ""; resetarTimer(); return;
             }
 
             push(chatRef, { usuario: usuarioAtual, tipo: 'texto', texto: texto, admin: isAdmin, timestamp: Date.now() });
-            input.value = "";
+            input.value = ""; resetarTimer();
         };
 
-        // Função do Bot (Mesma lógica de antes, mas adaptada se tiver arquivo local)
-        async function enviarImagemBot() {
-            try {
-                const response = await fetch('siga-alfabeto-sinais-traduzir.png');
-                if (!response.ok) throw new Error("Imagem não encontrada");
-                const blob = await response.blob();
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    push(chatRef, {
-                        usuario: "EYE_BOT",
-                        tipo: 'imagem',
-                        conteudo: e.target.result,
-                        admin: true,
-                        timestamp: Date.now()
-                    });
-                };
-                reader.readAsDataURL(blob);
-            } catch (error) { console.error("Erro bot img:", error); }
-        }
+        // CORREÇÃO: Adicionado Listener de Enter para o Chat
+        document.getElementById('msgInput').addEventListener("keypress", (e) => { 
+            if (e.key === "Enter") enviarMensagem(); 
+        });
 
-        // ================= UPLOAD (BASE64) =================
+        // ================= ARQUIVOS (BASE64) =================
         document.getElementById('fileInput').addEventListener('change', function(e) {
             if (this.files && this.files[0]) processarArquivo(this.files[0]);
         });
@@ -352,7 +336,7 @@
         });
 
         function processarArquivo(file) {
-            // LIMITE DE 7MB
+            // LIMITE 7MB
             const LIMITE_MB = 7;
             if (file.size > LIMITE_MB * 1024 * 1024) {
                 alert(`ARQUIVO MUITO PESADO!\nLimite: ${LIMITE_MB}MB.`);
@@ -375,6 +359,7 @@
                         
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                         push(chatRef, { usuario: usuarioAtual, tipo: 'imagem', conteudo: dataUrl, admin: isAdmin, timestamp: Date.now() });
+                        resetarTimer();
                     }
                     img.src = event.target.result;
                 }
@@ -384,6 +369,7 @@
                 reader.onload = function(event) {
                     const dataUrl = event.target.result;
                     push(chatRef, { usuario: usuarioAtual, tipo: 'audio', conteudo: dataUrl, admin: isAdmin, timestamp: Date.now() });
+                    resetarTimer();
                 }
                 reader.readAsDataURL(file);
             }
@@ -392,12 +378,23 @@
             }
         }
 
-        // ================= RECEBIMENTO E EXIBIÇÃO =================
+        async function enviarImagemBot() {
+            try {
+                const response = await fetch('siga-alfabeto-sinais-traduzir.png');
+                if (!response.ok) throw new Error("Imagem não encontrada");
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    push(chatRef, { usuario: "EYE_BOT", tipo: 'imagem', conteudo: e.target.result, admin: true, timestamp: Date.now() });
+                };
+                reader.readAsDataURL(blob);
+            } catch (error) { console.error("Erro bot:", error); }
+        }
+
+        // ================= DISPLAY =================
         onChildAdded(chatRef, (data) => {
             const msg = data.val();
-            
-            // Verifica tipo para exibir corretamente
-            if (msg.imagem) { // Compatibilidade antiga
+            if (msg.imagem) { // Compatibilidade
                 criarElementoMidia(msg.usuario, 'imagem', msg.imagem, msg.admin);
             } else if (msg.tipo === 'imagem' || msg.tipo === 'audio') {
                 criarElementoMidia(msg.usuario, msg.tipo, msg.conteudo, msg.admin);
@@ -406,8 +403,12 @@
             }
         });
 
-        // Não usamos mais onValue para limpar o HTML aqui, pois ele controla o Loading Screen lá em cima.
-        // Se precisar limpar o chat com /clear, o onValue lá em cima já atualiza e limpa se o snapshot for null.
+        // Limpa a tela se o banco for resetado (/clear)
+        onValue(chatRef, (snapshot) => { 
+            if (!snapshot.exists() && !isInitialLoad) {
+                document.getElementById('mensagens').innerHTML = ''; 
+            }
+        });
 
         function criarElementoMsg(usuario, texto, ehAdmin) {
             const listaMsg = document.getElementById('mensagens');
