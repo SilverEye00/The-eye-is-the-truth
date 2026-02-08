@@ -50,11 +50,11 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-        /* ================= TELA DE BANIMENTO (NOVA) ================= */
+        /* ================= TELA DE BANIMENTO ================= */
         #banned-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #050000; z-index: 3000; /* Fica acima de tudo */
-            display: none; /* Oculto por padrão */
+            background-color: #050000; z-index: 3000;
+            display: none;
             flex-direction: column; justify-content: center; align-items: center;
             text-align: center; color: #FF0000;
             text-shadow: 0 0 10px #FF0000;
@@ -237,49 +237,60 @@
         const db = getDatabase(app);
         const chatRef = ref(db, 'mensagens');
         const dbRef = ref(db);
-        const blacklistRef = ref(db, 'blacklist'); // Lista negra no banco
+        const blacklistRef = ref(db, 'blacklist');
         
         let usuarioAtual = "";
         let isAdmin = false;
         let isInitialLoad = true;
 
-        // ================= VERIFICAÇÃO DE BANIMENTO LOCAL =================
-        function verificarBanimentoLocal() {
-            if (localStorage.getItem("terminal_banned") === "true") {
-                aplicarBanimento();
-                return true;
-            }
-            return false;
-        }
-
+        // ================= FUNÇÕES DE BANIMENTO =================
         function aplicarBanimento() {
-            // Marca o navegador
             localStorage.setItem("terminal_banned", "true");
+            // Salva o nome de quem foi banido para saber quem verificar depois
+            if (usuarioAtual) {
+                localStorage.setItem("banned_username", usuarioAtual);
+            }
             
-            // Esconde tudo e mostra a tela de ban
+            // UI
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('login-overlay').style.display = 'none';
             document.querySelector('.chat-container').style.display = 'none';
             document.getElementById('banned-screen').style.display = 'flex';
-            
-            // Desconecta do banco (opcional, mas bom pra economizar dados)
-            // if (app) app.delete(); 
         }
 
-        // Executa ao abrir o site
-        if (verificarBanimentoLocal()) {
-            // Se já estiver banido, para tudo aqui
-            throw new Error("Usuário Banido");
+        function removerBanimentoLocal() {
+            localStorage.removeItem("terminal_banned");
+            localStorage.removeItem("banned_username");
+            location.reload(); // Recarrega a página para limpar o estado
         }
 
-        // ================= VIGILÂNCIA DE BANIMENTO (EM TEMPO REAL) =================
+        // Verifica se já está banido ao carregar
+        if (localStorage.getItem("terminal_banned") === "true") {
+            aplicarBanimento();
+        }
+
+        // ================= VIGILÂNCIA DE BANIMENTO (REALTIME) =================
+        // Este listener fica ativo mesmo se o usuário estiver banido, esperando o perdão.
         onValue(blacklistRef, (snapshot) => {
-            if (!usuarioAtual) return; // Só verifica se estiver logado
-
             const banList = snapshot.val() || {};
-            // Verifica se o meu nome está na lista (True)
-            if (banList[usuarioAtual] === true) {
-                aplicarBanimento();
+            
+            // Precisamos saber quem verificar. Se o usuário recarregou a página banido,
+            // 'usuarioAtual' está vazio, então pegamos do localStorage.
+            const userToCheck = usuarioAtual || localStorage.getItem("banned_username");
+            
+            if (!userToCheck) return; 
+
+            const userKey = userToCheck.toUpperCase().replace(/[.#$[\]]/g, "_");
+
+            // CENÁRIO 1: Usuário está na lista negra
+            if (banList[userKey] === true) {
+                if (localStorage.getItem("terminal_banned") !== "true") {
+                    aplicarBanimento();
+                }
+            } 
+            // CENÁRIO 2: Usuário NÃO está mais na lista, mas ainda está marcado no navegador (UNBAN)
+            else if (localStorage.getItem("terminal_banned") === "true") {
+                removerBanimentoLocal();
             }
         });
 
@@ -287,19 +298,20 @@
         onValue(chatRef, (snapshot) => {
             if (isInitialLoad) {
                 document.getElementById('loading-screen').style.display = 'none';
-                // Só mostra login se não foi banido e não está logado
-                if (!usuarioAtual && !localStorage.getItem("terminal_banned")) {
+                
+                // Só mostra login se NÃO estiver banido e NÃO estiver logado
+                if (!usuarioAtual && localStorage.getItem("terminal_banned") !== "true") {
                     document.getElementById('login-overlay').style.display = 'flex';
                 }
                 isInitialLoad = false;
             }
         });
 
-        // Fallback de segurança para o loading
+        // Fallback de segurança
         setTimeout(() => {
             if (isInitialLoad) {
                 document.getElementById('loading-screen').style.display = 'none';
-                if (!usuarioAtual && !localStorage.getItem("terminal_banned")) {
+                if (!usuarioAtual && localStorage.getItem("terminal_banned") !== "true") {
                     document.getElementById('login-overlay').style.display = 'flex';
                 }
                 isInitialLoad = false;
@@ -328,16 +340,18 @@
             const userInput = document.getElementById('usernameInput');
             const passInput = document.getElementById('passwordInput');
             const statusDiv = document.getElementById('loginStatus');
-            // Sanitiza nome para usar como chave no banco (remove . # $ [ ])
             const user = userInput.value.trim().replace(/[.#$[\]]/g, "_");
             const pass = passInput.value.trim();
 
             if (!user || !pass) { statusDiv.innerText = "DADOS INCOMPLETOS."; return; }
             
-            // Verifica se este usuário já está banido no servidor antes de entrar
+            // Verifica Banimento no servidor antes de deixar entrar
             try {
-                const banCheck = await get(child(dbRef, `blacklist/${user}`));
+                const userKey = user.toUpperCase().replace(/[.#$[\]]/g, "_");
+                const banCheck = await get(child(dbRef, `blacklist/${userKey}`));
                 if (banCheck.exists() && banCheck.val() === true) {
+                    // Salva o nome para o banimento funcionar corretamente
+                    usuarioAtual = user; 
                     aplicarBanimento();
                     return;
                 }
@@ -379,17 +393,14 @@
             
             // --- COMANDOS DE ADMIN ---
             if (isAdmin) {
-                // Limpar Chat
                 if (texto === "/clear") {
                     set(chatRef, null); 
                     input.value = ""; return;
                 }
                 
-                // Bloquear Usuário: /block NOME
                 if (texto.startsWith("/block ")) {
                     const targetUser = texto.split(" ")[1];
                     if (targetUser) {
-                        // Adiciona na lista negra do Firebase
                         const targetKey = targetUser.toUpperCase().replace(/[.#$[\]]/g, "_");
                         set(ref(db, 'blacklist/' + targetKey), true);
                         
@@ -404,13 +415,19 @@
                     input.value = ""; return;
                 }
 
-                // Desbloquear Usuário: /unban NOME
                 if (texto.startsWith("/unban ")) {
                     const targetUser = texto.split(" ")[1];
                     if (targetUser) {
                         const targetKey = targetUser.toUpperCase().replace(/[.#$[\]]/g, "_");
                         remove(ref(db, 'blacklist/' + targetKey));
-                        alert(`Usuário ${targetUser} removido da lista negra.`);
+                        // Feedback visual para o admin
+                        push(chatRef, { 
+                            usuario: "SYSTEM", 
+                            tipo: 'texto', 
+                            texto: `ALVO ${targetUser} RESTAURADO AO SISTEMA.`, 
+                            admin: true, 
+                            timestamp: Date.now() 
+                        });
                     }
                     input.value = ""; return;
                 }
