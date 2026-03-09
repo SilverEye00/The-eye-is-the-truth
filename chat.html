@@ -302,16 +302,17 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded, set, onValue, get, child, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = {
+           const firebaseConfig = {
             apiKey: "AIzaSyCsjAtBMNZLSjjrMteSuZDUCLM6_yixN4A",
             authDomain: "s1lv3r-3ye.firebaseapp.com",
-            databaseURL: "https://s1lv3r-3ye-default-rtdb.firebaseio.com",
+            // ABAIXO A URL CORRIGIDA COM O SUFIXO -81f4c
+            databaseURL: "https://s1lv3r-3ye-81f4c-default-rtdb.firebaseio.com", 
             projectId: "s1lv3r-3ye",
             storageBucket: "s1lv3r-3ye.firebasestorage.app",
             messagingSenderId: "890533866689",
             appId: "1:890533866689:web:e72865ca464f4d6138b840",
             measurementId: "G-L021HC6N31"
-        };
+            };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
