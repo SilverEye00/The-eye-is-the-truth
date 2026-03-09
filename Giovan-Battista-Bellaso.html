@@ -393,7 +393,19 @@
                 }, 2000);
                 
             } else {
+                // Modificação aplicada aqui para piscar uma vez e sumir
+                
+                // 1. Mostra a mensagem (inicia a animação CSS infinita)
                 errorMsg.style.display = "block";
+                
+                // 2. Define um timer para esconder a mensagem.
+                // Como a animação dura 0.5s no CSS, definimos 1s (1000ms) 
+                // para garantir que pisque (apareça, suma, reapareça) e depois suma de vez.
+                setTimeout(() => {
+                    errorMsg.style.display = "none";
+                }, 1000); 
+
+                // Mantém o resto da lógica de erro original
                 input.value = "";
                 input.classList.add("glitch");
                 setTimeout(() => input.classList.remove("glitch"), 500);
